@@ -6,7 +6,7 @@ build_id = $(call per_target,build_id)
 
 build_vars = $(foreach var,$(1),$(call add_build_var,$(var))$(newline))
 add_build_var = \
-  $(call target_var,build_id_text) += $$(let val,$$($(1)),$$(if $$(val),$(1)="$$(strip $$(val))"))
+  $(call target_var,build_id_text) += $$(if $$($(1)),$(1)="$$(strip $$($(1)))")
 
 build_makefiles := $(wildcard mk/*.mk)
 $(build_makefiles):

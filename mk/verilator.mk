@@ -129,14 +129,12 @@ endef
 
 verilator_src_args = \
   $(strip \
-    $(let rtl_top,$(call require_core_var,$(rule_top),rtl_top), \
-      --top $(rtl_top) \
+      --top $(call require_core_var,$(rule_top),rtl_top) \
       $(foreach dep,$(dep_tree/$(rule_top)), \
-        $(let prefix,$(core_info/$(dep)/workdir)/, \
-          $(foreach rtl_dir,$(call core_paths,$(dep),rtl_dirs), \
-            -y $(rtl_dir)) \
-          $(foreach include_dir,$(call core_paths,$(dep),rtl_include_dirs), \
-            -I$(include_dir)) \
-          $(foreach src_file,$(call core_paths,$(dep),rtl_files) $(call core_paths,$(dep),vl_files), \
-            $(src_file))))) \
+        $(foreach rtl_dir,$(call core_paths,$(dep),rtl_dirs), \
+          -y $(rtl_dir)) \
+        $(foreach include_dir,$(call core_paths,$(dep),rtl_include_dirs), \
+          -I$(include_dir)) \
+        $(foreach src_file,$(call core_paths,$(dep),rtl_files) $(call core_paths,$(dep),vl_files), \
+          $(src_file))) \
     $(if $(vl_main),$(vl_main),$(error $$(vl_main) not defined by target '$(rule_target)')))

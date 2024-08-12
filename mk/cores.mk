@@ -14,11 +14,10 @@ core_paths_no_dyn = \
   $(patsubst /%,%, \
     $(patsubst /,., \
       $(abspath \
-        $(let prefix,$(core_info/$(1)/workdir), \
-          $(foreach path_elem,$(core_info/$(1)/$(2)), \
-            $(if $(patsubst /%,,$(path_elem)), \
-              $(addprefix /$(if $(3),$(3)/,$(if $(prefix),$(prefix)/)),$(path_elem)), \
-              $(path_elem)))))))
+        $(foreach path_elem,$(core_info/$(1)/$(2)), \
+          $(if $(patsubst /%,,$(path_elem)), \
+            $(addprefix /$(if $(3),$(3)/,$(if $(core_info/$(1)/workdir),$(core_info/$(1)/workdir)/)),$(path_elem)), \
+            $(path_elem))))))
 
 core_paths = \
   $(call core_paths_no_dyn,$(1),$(2),$(3)) $(call core_paths_no_dyn,$(1),$(call target_var,$(2)),$(3))
@@ -27,8 +26,8 @@ core_objs = $(call core_paths,$(1),$(2),$(obj))
 
 require_core_paths = \
   $(strip \
-    $(let val,$(strip $(call core_paths,$(1),$(2),$(3))), \
-      $(if $(val),$(val),$(error core '$(1)' must define '$(2)'))))
+    $(eval path_val := $$(strip $$(call core_paths,$(1),$(2),$(3)))) \
+    $(if $(path_val),$(path_val),$(error core '$(1)' must define '$(2)')))
 
 require_core_objs = $(call require_core_paths,$(1),$(2),$(obj))
 
@@ -40,8 +39,8 @@ endef
 
 require_core_var = \
   $(strip \
-    $(let val,$(core_info/$(1)/$(2)), \
-      $(if $(val),$(val),$(error core '$(1)' must define '$(2)'))))
+    $(eval var_val := $$(core_info/$(1)/$(2))) \
+    $(if $(var_val),$(var_val),$(error core '$(1)' must define '$(2)')))
 
 core_shell = $(call shell_checked,cd $(here); $(1))
 
@@ -95,10 +94,9 @@ define setup_dep_tree
 endef
 
 define setup_stamp_rules
-  $$(foreach core,$$(all_cores), \
-    $$(let stamp,$$(call core_stamp,$$(core)), \
-      $$(stamp) \
-      $$(eval $$(call add_core_stamp,$$(core),$$(stamp))))): $$(build_makefiles) | $$(obj)
+  $$(strip $$(foreach core,$$(all_cores), \
+    $$(eval stamp_val := $$$$(call core_stamp,$$(core))) $$(stamp_val) \
+    $$(eval $$(call add_core_stamp,$$(core),$$(stamp_val))))): $$(build_makefiles) | $$(obj)
 endef
 
 define add_core_stamp
@@ -130,8 +128,8 @@ define merge_mapped_deps
 
   $$(foreach dep,$$(core_info/$(2)/deps), \
     $$(eval $(1)_deps/$(2) := \
-      $$(let mapped_dep,$$(call map_core_deps,$(1),$$(dep)), \
-        $$(mapped_dep) $$(filter-out $$(mapped_dep),$$($(1)_deps/$(2))))))
+      $$(eval mapped_dep := $$$$(call map_core_deps,$(1),$$(dep))) \
+      $$(mapped_dep) $$(filter-out $$(mapped_dep),$$($(1)_deps/$(2)))))
 endef
 
 define finish_stamp_rules
