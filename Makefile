@@ -1,4 +1,4 @@
-top := hscale-v
+top := hsv_core
 core_dirs := rtl sim target
 
 .PHONY: all
