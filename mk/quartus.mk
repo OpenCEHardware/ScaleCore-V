@@ -2,6 +2,9 @@
 
 targets += quartus
 
+# Sobreescribir en la línea de comandos en caso de WSL
+quartus_src := src
+
 quartus_qsf = $(obj)/$(quartus_top).qsf
 quartus_qpf = $(obj)/$(quartus_top).qpf
 quartus_run = cd $(obj) && $(QUARTUS)
@@ -28,6 +31,7 @@ define target/quartus/prepare
 endef
 
 define target/quartus/setup
+  $(call build_vars,quartus_src)
   $(call target_var,quartus_top) := $$(call require_core_var,$$(rule_top),rtl_top)
   $(call target_var,quartus_device) := $$(call require_core_var,$$(rule_top),altera_device)
   $(call target_var,quartus_family) := $$(call require_core_var,$$(rule_top),altera_family)
@@ -111,14 +115,14 @@ define target/quartus/rules
 			[Vv][Hh][Dd]) name=VHDL_FILE ;; \
 			*)            name=SOURCE_FILE ;; \
 		esac; \
-		assignment "$$$$name" "src/$$$$x"; \
+		assignment "$$$$name" "$$(quartus_src)/$$$$x"; \
 	done && \
-	assignment_list "Search paths" SEARCH_PATH $$(addprefix src/,$$(quartus_rtl_include)) && \
-	assignment_list "Constraint files" SDC_FILE $$(addprefix src/,$$(quartus_sdc)) && \
-	assignment_list "IPs" QIP_FILE $$(addprefix src/,$$(quartus_qip)) && \
+	assignment_list "Search paths" SEARCH_PATH $$(addprefix $$(quartus_src)/,$$(quartus_rtl_include)) && \
+	assignment_list "Constraint files" SDC_FILE $$(addprefix $$(quartus_src)/,$$(quartus_sdc)) && \
+	assignment_list "IPs" QIP_FILE $$(addprefix $$(quartus_src)/,$$(quartus_qip)) && \
 	assignment_list "Platform IPs" QIP_FILE $$(quartus_plat_qip) && \
-	assignment_list "Platforms" QSYS_FILE $$(addprefix src/,$$(quartus_qsys)) && \
-	for x in $$(quartus_tcl); do printf "\n#\n# TCL file %s\n#\n" "$$$$x"; cat "src/$$$$x"; done
+	assignment_list "Platforms" QSYS_FILE $$(addprefix $$(quartus_src)/,$$(quartus_qsys)) && \
+	for x in $$(quartus_tcl); do printf "\n#\n# TCL file %s\n#\n" "$$$$x"; cat "$$(quartus_src)/$$$$x"; done
 
   $(call target_entrypoint,$$(rule_top_path)/quartus $(patsubst %,$$(obj)/%.stamp,map fit sta asm))
 
