@@ -23,6 +23,8 @@ ifeq (,$(top))
   $(error $$(top) is not defined)
 endif
 
+enable_synthesis := 1
+
 $(foreach flag,$(subst $(comma),$(space),$(enable)),$(eval override enable_$(flag) := 1))
 $(foreach flag,$(subst $(comma),$(space),$(disable)),$(eval override enable_$(flag) :=))
 

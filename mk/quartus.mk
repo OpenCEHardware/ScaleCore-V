@@ -1,6 +1,6 @@
 # Based on github:alexforencich/verilog-ethernet:example/DE2-115/fpga/common/quartus.mk
 
-targets += syn
+targets += quartus
 
 quartus_qsf = $(obj)/$(quartus_top).qsf
 quartus_qpf = $(obj)/$(quartus_top).qpf
@@ -23,17 +23,17 @@ quartus_src_files = $(quartus_rtl) $(quartus_sdc) $(quartus_qip) $(quartus_qsys)
 quartus_plat_qip = $(foreach plat,$(quartus_platforms),$(call quartus_plat_path,$(plat)))
 quartus_plat_path = qsys/$(1)/synthesis/$(basename $(notdir $(core_info/$(1)/qsys_platform))).qip
 
-define target/syn/prepare
-  flow/type := syn
+define target/quartus/prepare
+  flow/type := quartus
 endef
 
-define target/syn/setup
+define target/quartus/setup
   $(call target_var,quartus_top) := $$(call require_core_var,$$(rule_top),rtl_top)
   $(call target_var,quartus_device) := $$(call require_core_var,$$(rule_top),altera_device)
   $(call target_var,quartus_family) := $$(call require_core_var,$$(rule_top),altera_family)
 endef
 
-define target/syn/rules
+define target/quartus/rules
   deps := $$(dep_tree/$$(rule_top))
 
   explicit_rtl := $$(foreach dep,$$(deps),$$(call core_paths,$$(dep),rtl_files))
@@ -62,9 +62,10 @@ define target/syn/rules
   $(call target_var,quartus_qsys) := \
 	$$(foreach dep,$$(quartus_platforms),$$(call core_paths,$$(dep),qsys_platform))
 
-  .PHONY: $$(rule_top_path)/syn
+  .PHONY: $$(rule_top_path)/quartus
 
-  $$(rule_top_path)/syn: $$(obj)/asm.stamp
+  $$(rule_top_path)/quartus: $$(if $$(enable_synthesis),$$(obj)/asm.stamp,$$(quartus_qpf))
+	$$(shell echo Quartus project file: $$(quartus_qpf) >&2)
 	$$(if $$(enable_gui),$$(call run,GUI) $$(quartus_run) $$(quartus_top).qpf)
 
   $$(obj)/asm.stamp: $$(obj)/sta.stamp
@@ -89,10 +90,11 @@ define target/syn/rules
 	$$(call run,QSF) \
 	rm -f $$(quartus_qsf) $$(quartus_qpf) && \
 	cd $$(obj) && \
-	$$(QUARTUS)_sh \
-		--prepare -f $$(quartus_family) -d $$(quartus_device) \
-		-t $$(quartus_top) $$(quartus_top) && \
-	exec >>$$(quartus_top).qsf && \
+	echo 'PROJECT_REVISION = "$$(quartus_top)"' >$$(quartus_top).qpf && \
+	exec >$$(quartus_top).qsf && \
+	echo 'set_global_assignment -name FAMILY $$(quartus_family)' && \
+	echo 'set_global_assignment -name DEVICE $$(quartus_device)' && \
+	echo 'set_global_assignment -name TOP_LEVEL_ENTITY $$(quartus_top)' && \
 	echo -e "\n\n# Source files" && \
 	assignment() { echo set_global_assignment -name $$$$1 $$$$2; } && \
 	assignment_list() { \
@@ -118,7 +120,7 @@ define target/syn/rules
 	assignment_list "Platforms" QSYS_FILE $$(addprefix src/,$$(quartus_qsys)) && \
 	for x in $$(quartus_tcl); do printf "\n#\n# TCL file %s\n#\n" "$$$$x"; cat "src/$$$$x"; done
 
-  $(call target_entrypoint,$$(rule_top_path)/syn $(patsubst %,$$(obj)/%.stamp,map fit sta asm))
+  $(call target_entrypoint,$$(rule_top_path)/quartus $(patsubst %,$$(obj)/%.stamp,map fit sta asm))
 
   $$(foreach plat,$$(quartus_platforms),$$(eval $$(call quartus_qsys_rules,$$(plat))))
 endef
