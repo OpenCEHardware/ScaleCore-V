@@ -95,13 +95,13 @@ define target/quartus/rules
 	echo 'set_global_assignment -name FAMILY $$(quartus_family)' && \
 	echo 'set_global_assignment -name DEVICE $$(quartus_device)' && \
 	echo 'set_global_assignment -name TOP_LEVEL_ENTITY $$(quartus_top)' && \
-	echo -e "\n\n# Source files" && \
+	printf "\n\n# Source files\n" && \
 	assignment() { echo set_global_assignment -name $$$$1 $$$$2; } && \
 	assignment_list() { \
 		title="$$$$1"; \
 		name="$$$$2"; \
 		shift 2; \
-		echo -e "\n# $$$$title" && \
+		printf "\n# $$$$title\n" && \
 		for x in $$$$@; do assignment "$$$${name}" "$$$$x"; done \
 	} && \
 	for x in $$(quartus_rtl); do \
