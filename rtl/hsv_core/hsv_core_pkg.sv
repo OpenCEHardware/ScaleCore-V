@@ -2,14 +2,26 @@ package hsv_core_pkg;
 
   typedef logic [31:0] word;
 
-
   // Execute-Memory Stage
+  typedef logic [31:0] shift;
+
+  typedef enum logic [0:0] {
+    ALU_OUT_ADDER,
+    ALU_OUT_SHIFT
+  } alu_out_t;
+
+  typedef enum logic [1:0] {
+    ALU_BITWISE_AND,
+    ALU_BITWISE_OR,
+    ALU_BITWISE_XOR,
+    ALU_BITWISE_PASS
+  } alu_bitwise_t;
 
   typedef struct packed {
     word pc;
     word rs1;
     word rs2;
-    word inmediate;
+    word immediate;
   } common_data_t;
 
   typedef struct packed {

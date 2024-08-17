@@ -1,4 +1,4 @@
-`include "hsv_core_pkg"
+import hsv_core_pkg::*;
 
 module hsv_core_alu (
 
@@ -24,16 +24,16 @@ module hsv_core_alu (
   logic         stall;
 
   logic         valid_setup;
-  alu_data      alu_data_setup;
+  alu_data_t    alu_data_setup;
 
   word          shift_lo;
   word          shift_hi;
-  shift_t       shift_count;
+  shift         shift_count;
   word          adder_a;
   word          adder_b;
 
   logic         valid_shift_add;
-  alu_data      alu_data_shift_add;
+  alu_data_t    alu_data_shift_add;
   word          q_shift_add;
 
   commit_data_t commit_data_temp;
@@ -78,8 +78,8 @@ module hsv_core_alu (
       .out_q(q_shift_add)
   );
 
-  // Logic to form commit_data_temp
-  assign commit_data_temp = alu_data_shift_add;
+  // TODO: Logic to form commit_data_temp
+  assign commit_data_temp.pc = alu_data_shift_add.common.pc;
 
   // Buffering pipe
   hs_skid_buffer #(
@@ -97,14 +97,12 @@ module hsv_core_alu (
 
       .out(commit_data),
       .out_ready,
-      .out_valid,
+      .out_valid
   );
 
 endmodule
 
-module hsv_core_alu_bitwise_setup
-  import hsv_core_pkg::*;
-(
+module hsv_core_alu_bitwise_setup (
     input logic clk_core,
 
     input logic stall,
@@ -117,7 +115,7 @@ module hsv_core_alu_bitwise_setup
     output alu_data_t out_alu_data,
     output word       out_shift_lo,
     output word       out_shift_hi,
-    output shift_t    out_shift_count,
+    output shift      out_shift_count,
     output word       out_adder_a,
     output word       out_adder_b
 );
@@ -161,7 +159,7 @@ module hsv_core_alu_bitwise_setup
     operand_b_flip[$bits(operand_b_flip)-1] ^= in_alu_data.flip_signs;
   end
 
-  always_ff @(posedge clk) begin
+  always_ff @(posedge clk_core) begin
     if (~stall) begin
       out_alu_data <= in_alu_data;
       out_valid <= in_valid;
@@ -194,9 +192,7 @@ module hsv_core_alu_bitwise_setup
 
 endmodule
 
-module hsv_core_alu_shift_add
-  import hsv_core_pkg::*;
-(
+module hsv_core_alu_shift_add (
     input logic clk_core,
 
     input logic stall,
@@ -206,7 +202,7 @@ module hsv_core_alu_shift_add
     input alu_data_t in_alu_data,
     input word       in_shift_lo,
     input word       in_shift_hi,
-    input shift_t    in_shift_count,
+    input shift      in_shift_count,
     input word       in_adder_a,
     input word       in_adder_b,
 
@@ -243,7 +239,7 @@ module hsv_core_alu_shift_add
     if (in_alu_data.compare) adder_q = word'(adder_carry);
   end
 
-  always_ff @(posedge clk) begin
+  always_ff @(posedge clk_core) begin
     if (~stall) begin
       out_alu_data <= in_alu_data;
       out_valid <= in_valid;
