@@ -1,84 +1,142 @@
+`include "hsv_core_pkg"
 
-//TODO
-module hsv_core_alu
-(
+module hsv_core_alu (
+
+    // Sequential signals
     input logic clk_core,
-    input logic rst_core_n,
+    input logic rst_core,
 
-    input logic  flush_req,
+    // Flush signals
+    input  logic flush_req,
     output logic flush_ack,
 
-	// Comming from/to last pipe
-output logic      in_ready,
-input logic          in_valid,
-    input issue2alu_t in_op,
-input word_t      in_read_rs2, //TODO esto para common
-    input word_t      in_read_rs1, //TODO esto para common
-   
-	// Going to/from next pipe
-    input logic          out_ready,
-    output logic         out_valid,
-    output exec2commit_t     out_op
+    // Input Channel (sink) signals
+    input alu_data_t alu_data,
+    output logic in_ready,
+    input logic in_valid,
 
+    // Output (source) signals
+    output commit_data_t commit_data,
+    input logic out_ready,
+    output logic out_valid
 );
 
-	logic stall;
-    hs_skid_buffer exec_2_commit(
-		.clk_core,
-		   .rst_core_n,
+  logic         stall;
 
-		.stall,
-		.flush_req,
+  logic         valid_setup;
+  alu_data      alu_data_setup;
 
-		.in_ready,
-		.in_valid,
-		
-		.out_ready
-		      .out_valid,
-		);
+  word          shift_lo;
+  word          shift_hi;
+  shift_t       shift_count;
+  word          adder_a;
+  word          adder_b;
 
+  logic         valid_shift_add;
+  alu_data      alu_data_shift_add;
+  word          q_shift_add;
 
+  commit_data_t commit_data_temp;
 
+  // First Stage
+  hsv_core_alu_bitwise_setup setup (
+      .clk_core,
 
-    hsv_core_alu_bitwise_setup bloque_1();
-    hsv_core_alu_shift_add bloque_2();
+      .stall,
+      .flush_req,
 
+      .in_valid,
+      .in_alu_data(alu_data),
 
+      .out_valid(valid_setup),
+      .out_alu_data(alu_data_setup),
+
+      .out_shift_lo(shift_lo),
+      .out_shift_hi(shift_hi),
+      .out_shift_count(shift_count),
+      .out_adder_a(adder_a),
+      .out_adder_b(adder_b)
+  );
+
+  // Second Stage
+  hsv_core_alu_shift_add shift_add (
+      .clk_core,
+
+      .stall,
+      .flush_req,
+
+      .in_valid(valid_setup),
+      .in_alu_data(alu_data_setup),
+      .in_shift_lo(shift_lo),
+      .in_shift_hi(shift_hi),
+      .in_shift_count(shift_count),
+      .in_adder_a(adder_a),
+      .in_adder_b(adder_b),
+
+      .out_valid(valid_shift_add),
+      .out_alu_data(alu_data_shift_add),
+      .out_q(q_shift_add)
+  );
+
+  // Logic to form commit_data_temp
+  assign commit_data_temp = alu_data_shift_add;
+
+  // Buffering pipe
+  hs_skid_buffer #(
+      .WIDTH($bits(commit_data_t))
+  ) alu_2_commit (
+      .clk_core,
+      .rst_core,
+
+      .stall,
+      .flush_req,
+
+      .in(commit_data_temp),
+      .in_ready(1),
+      .in_valid(valid_shift_add),
+
+      .out(commit_data),
+      .out_ready,
+      .out_valid,
+  );
 
 endmodule
 
 module hsv_core_alu_bitwise_setup
   import hsv_core_pkg::*;
 (
-    input logic clk,
+    input logic clk_core,
 
     input logic stall,
     input logic flush_req,
 
-    input logic       in_valid,
-    input issue2alu_t in_op,
-    input word_t      in_read_rs1,
-    input word_t      in_read_rs2,
+    input logic      in_valid,
+    input alu_data_t in_alu_data,
 
-    output logic       out_valid,
-    output issue2alu_t out_op,
-    output word_t      out_shift_lo,
-    output word_t      out_shift_hi,
-    output shift_t     out_shift_count,
-    output word_t      out_adder_a,
-    output word_t      out_adder_b
+    output logic      out_valid,
+    output alu_data_t out_alu_data,
+    output word       out_shift_lo,
+    output word       out_shift_hi,
+    output shift_t    out_shift_count,
+    output word       out_adder_a,
+    output word       out_adder_b
 );
 
   logic shift_left;
-  word_t operand_a_flip, operand_b, operand_b_flip, operand_b_neg;
+  word operand_a_flip, operand_b, operand_b_flip, operand_b_neg;
+  word in_read_rs1, in_read_rs2;
+
+  // Extract read registers from the in_alu_data struct
+  assign in_read_rs1 = in_alu_data.common.rs1;
+  assign in_read_rs1 = in_alu_data.common.rs2;
 
   // Left-shifts by zero is an edge case. We convert them to right-shifts by
   // zero. Try to follow on what would happen if it were not checked for.
   // Regarding operand_b_neg and out_shift_count below, note that -0 = 0.
-  assign shift_left = in_op.negate & (operand_b != '0);
+  assign shift_left = in_alu_data.negate & (operand_b != '0);
 
-  assign operand_b = in_op.is_immediate ? in_op.common.immediate : in_read_rs2;
-  assign operand_b_neg = in_op.negate ? -operand_b : operand_b;
+  assign operand_b = in_alu_data.is_immediate ? in_alu_data.common.immediate : in_read_rs2;
+  assign operand_b_neg = in_alu_data.negate ? -operand_b : operand_b;
 
   always_comb begin
     operand_a_flip = in_read_rs1;
@@ -99,16 +157,16 @@ module hsv_core_alu_bitwise_setup
     // | 10000001     | 1          | 129                     |
     // | ...          | ...        | ...                     |
     // | 11111111     | 127        | 255                     |
-    operand_a_flip[$bits(operand_a_flip)-1] ^= in_op.flip_signs;
-    operand_b_flip[$bits(operand_b_flip)-1] ^= in_op.flip_signs;
+    operand_a_flip[$bits(operand_a_flip)-1] ^= in_alu_data.flip_signs;
+    operand_b_flip[$bits(operand_b_flip)-1] ^= in_alu_data.flip_signs;
   end
 
   always_ff @(posedge clk) begin
     if (~stall) begin
-      out_op <= in_op;
+      out_alu_data <= in_alu_data;
       out_valid <= in_valid;
 
-      unique case (in_op.bitwise_select)
+      unique case (in_alu_data.bitwise_select)
         ALU_BITWISE_AND:  out_shift_lo <= in_read_rs1 & operand_b;
         ALU_BITWISE_OR:   out_shift_lo <= in_read_rs1 | operand_b;
         ALU_BITWISE_XOR:  out_shift_lo <= in_read_rs1 ^ operand_b;
@@ -117,13 +175,17 @@ module hsv_core_alu_bitwise_setup
 
       if (shift_left) out_shift_hi <= in_read_rs1;
       else
-        out_shift_hi <= {($bits(word_t)) {in_op.sign_extend & in_read_rs1[$bits(in_read_rs1)-1]}};
+        out_shift_hi <= {($bits(
+            word
+        )) {in_alu_data.sign_extend & in_read_rs1[$bits(
+            in_read_rs1
+        )-1]}};
 
       // According to RISC-V spec, higher bits in the shift count must
       // be silently discarded
       out_shift_count <= operand_b_neg[$bits(out_shift_count)-1];
 
-      out_adder_a <= in_op.pc_relative ? in_op.common.pc : operand_a_flip;
+      out_adder_a <= in_alu_data.pc_relative ? in_alu_data.common.pc : operand_a_flip;
       out_adder_b <= operand_b_flip;
     end
 
@@ -135,26 +197,26 @@ endmodule
 module hsv_core_alu_shift_add
   import hsv_core_pkg::*;
 (
-    input logic clk,
+    input logic clk_core,
 
     input logic stall,
     input logic flush_req,
 
-    input logic       in_valid,
-    input issue2alu_t in_op,
-    input word_t      in_shift_lo,
-    input word_t      in_shift_hi,
-    input shift_t     in_shift_count,
-    input word_t      in_adder_a,
-    input word_t      in_adder_b,
+    input logic      in_valid,
+    input alu_data_t in_alu_data,
+    input word       in_shift_lo,
+    input word       in_shift_hi,
+    input shift_t    in_shift_count,
+    input word       in_adder_a,
+    input word       in_adder_b,
 
-    output logic       out_valid,
-    output issue2alu_t out_op,
-    output word_t      out_q
+    output logic      out_valid,
+    output alu_data_t out_alu_data,
+    output word       out_q
 );
 
   logic adder_carry;
-  word_t adder_q, shift_q, shift_discarded;
+  word adder_q, shift_q, shift_discarded;
 
   assign {shift_discarded, shift_q} = {in_shift_hi, in_shift_lo} >> in_shift_count;
 
@@ -178,15 +240,15 @@ module hsv_core_alu_shift_add
     // manner, we simply hard-code the input sign bits to 0/+ and 1/-,
     // respectively.
     {adder_carry, adder_q} = {1'b0, in_adder_a} + {1'b1, in_adder_b};
-    if (in_op.compare) adder_q = word_t'(adder_carry);
+    if (in_alu_data.compare) adder_q = word'(adder_carry);
   end
 
   always_ff @(posedge clk) begin
     if (~stall) begin
-      out_op <= in_op;
+      out_alu_data <= in_alu_data;
       out_valid <= in_valid;
 
-      unique case (in_op.out_select)
+      unique case (in_alu_data.out_select)
         ALU_OUT_ADDER: out_q <= adder_q;
         ALU_OUT_SHIFT: out_q <= shift_q;
       endcase
