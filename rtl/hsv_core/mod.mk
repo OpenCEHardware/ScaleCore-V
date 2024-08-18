@@ -1,4 +1,4 @@
-cores := hsv_core_alu
+cores := hsv_core_alu hsv_core_pkg
 
 define core
   $(this)/deps := hsv_core_alu hsv_core_pkg 
@@ -8,10 +8,13 @@ define core
 endef
 
 define core/hsv_core_alu
-  $(this)/deps := hsv_core_pkg hs_skid_buffer
+  $(this)/deps := hsv_core_pkg hs_utils
+  $(this)/targets := sim
 
   $(this)/rtl_top := hsv_core_alu
   $(this)/rtl_files := hsv_core_alu.sv
+
+  $(this)/vl_main := alu.cpp
 endef
 
 define core/hsv_core_pkg

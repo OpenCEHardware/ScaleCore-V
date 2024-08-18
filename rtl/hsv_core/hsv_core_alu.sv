@@ -33,10 +33,8 @@ module hsv_core_alu
   word          adder_b;
 
   logic         valid_shift_add;
-  alu_data_t    alu_data_shift_add;
-  word          q_shift_add;
-
   commit_data_t commit_data_temp;
+  word          q_shift_add;
 
   // First Stage
   hsv_core_alu_bitwise_setup setup (
@@ -74,12 +72,8 @@ module hsv_core_alu
       .in_adder_b(adder_b),
 
       .out_valid(valid_shift_add),
-      .out_alu_data(alu_data_shift_add),
-      .out_q(q_shift_add)
+      .out_commit_data(commit_data_temp),
   );
-
-  // TODO: Logic to form commit_data_temp
-  assign commit_data_temp.pc = alu_data_shift_add.common.pc;
 
   // Buffering pipe
   hs_skid_buffer #(
@@ -99,6 +93,10 @@ module hsv_core_alu
       .out_ready,
       .out_valid
   );
+
+  always_ff @(posedge clk_core or negedge rst_core)
+    if (~rst_core) flush_ack <= 0;
+    else flush_ack <= flush_req;
 
 endmodule
 
@@ -210,12 +208,12 @@ module hsv_core_alu_shift_add
     input word       in_adder_a,
     input word       in_adder_b,
 
-    output logic      out_valid,
-    output alu_data_t out_alu_data,
-    output word       out_q
+    output logic         out_valid,
+    output commit_data_t out_commit_data
 );
 
   logic adder_carry;
+  word  out_q;
   word adder_q, shift_q, shift_discarded;
 
   assign {shift_discarded, shift_q} = {in_shift_hi, in_shift_lo} >> in_shift_count;
@@ -245,7 +243,8 @@ module hsv_core_alu_shift_add
 
   always_ff @(posedge clk_core) begin
     if (~stall) begin
-      out_alu_data <= in_alu_data;
+      out_commit_data.result <= out_q;
+      out_commit_data.pc <= in_alu_data.common.pc;
       out_valid <= in_valid;
 
       unique case (in_alu_data.out_select)

@@ -70,6 +70,9 @@ package hsv_core_pkg;
 
   //Commmit Stage
 
-  typedef struct packed {word pc;} commit_data_t;
+  typedef struct packed {
+    word pc;
+    word result;
+  } commit_data_t;
 
 endpackage : hsv_core_pkg
