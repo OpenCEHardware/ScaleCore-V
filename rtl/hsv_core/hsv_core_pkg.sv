@@ -3,7 +3,7 @@ package hsv_core_pkg;
   typedef logic [31:0] word;
 
   // Execute-Memory Stage
-  typedef logic [31:0] shift;
+  typedef logic [4:0] shift;
 
   typedef enum logic [0:0] {
     ALU_OUT_ADDER,

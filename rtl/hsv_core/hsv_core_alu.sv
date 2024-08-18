@@ -1,6 +1,6 @@
-import hsv_core_pkg::*;
-
-module hsv_core_alu (
+module hsv_core_alu
+  import hsv_core_pkg::*;
+(
 
     // Sequential signals
     input logic clk_core,
@@ -92,7 +92,7 @@ module hsv_core_alu (
       .flush_req,
 
       .in(commit_data_temp),
-      .in_ready(1),
+      .in_ready,
       .in_valid(valid_shift_add),
 
       .out(commit_data),
@@ -102,7 +102,9 @@ module hsv_core_alu (
 
 endmodule
 
-module hsv_core_alu_bitwise_setup (
+module hsv_core_alu_bitwise_setup
+  import hsv_core_pkg::*;
+(
     input logic clk_core,
 
     input logic stall,
@@ -126,7 +128,7 @@ module hsv_core_alu_bitwise_setup (
 
   // Extract read registers from the in_alu_data struct
   assign in_read_rs1 = in_alu_data.common.rs1;
-  assign in_read_rs1 = in_alu_data.common.rs2;
+  assign in_read_rs2 = in_alu_data.common.rs2;
 
   // Left-shifts by zero is an edge case. We convert them to right-shifts by
   // zero. Try to follow on what would happen if it were not checked for.
@@ -192,7 +194,9 @@ module hsv_core_alu_bitwise_setup (
 
 endmodule
 
-module hsv_core_alu_shift_add (
+module hsv_core_alu_shift_add
+  import hsv_core_pkg::*;
+(
     input logic clk_core,
 
     input logic stall,
