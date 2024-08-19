@@ -33,7 +33,7 @@ module hsv_core_alu
   adder_in      adder_b;
 
   logic         valid_shift_add;
-  commit_data_t commit_data_temp;
+  commit_data_t out_shift_add;
   word          q_shift_add;
 
   // First Stage
@@ -71,13 +71,13 @@ module hsv_core_alu
       .in_adder_a(adder_a),
       .in_adder_b(adder_b),
 
-      .out_valid(valid_shift_add),
-      .out_commit_data(commit_data_temp)
+      .out(out_shift_add),
+      .out_valid(valid_shift_add)
   );
 
   // Buffering pipe
   hs_skid_buffer #(
-      .WIDTH($bits(commit_data_t))
+      .WIDTH($bits(commit_data))
   ) alu_2_commit (
       .clk_core,
       .rst_core,
@@ -85,7 +85,7 @@ module hsv_core_alu
       .stall,
       .flush_req,
 
-      .in(commit_data_temp),
+      .in(out_shift_add),
       .in_ready,
       .in_valid(valid_shift_add),
 
@@ -120,23 +120,23 @@ module hsv_core_alu_bitwise_setup
     output adder_in   out_adder_b
 );
 
-  word in_read_rs1, in_read_rs2, operand_b;
+  word operand_a, operand_b;
   logic operand_b_non_zero, shift_left;
   adder_in operand_a_ext, operand_a_flip, operand_b_ext, operand_b_flip, operand_b_neg;
 
   // Extract read registers from the in_alu_data struct
-  assign in_read_rs1 = in_alu_data.common.rs1;
-  assign in_read_rs2 = in_alu_data.common.rs2;
+  assign operand_a = in_alu_data.common.rs1;
+  assign operand_b = in_alu_data.is_immediate ? in_alu_data.common.immediate : in_alu_data.common.rs2;
 
   // Left-shifts by zero is an edge case. We convert them to right-shifts by
   // zero. Try to follow on what would happen if it were not checked for.
   // Regarding operand_b_neg and out_shift_count below, note that -0 = 0.
   assign shift_left = in_alu_data.negate & operand_b_non_zero;
 
-  assign operand_a_ext = {in_read_rs1[$bits(in_read_rs1)-1], in_read_rs1};
+  // Sign-extend to 33 bits for adder
+  assign operand_a_ext = {operand_a[$bits(operand_a)-1], operand_a};
   assign operand_b_ext = {operand_b[$bits(operand_b)-1], operand_b};
 
-  assign operand_b = in_alu_data.is_immediate ? in_alu_data.common.immediate : in_read_rs2;
   assign operand_b_neg = in_alu_data.negate ? -operand_b_ext : operand_b_ext;
   assign operand_b_non_zero = operand_b != '0;
 
@@ -181,22 +181,22 @@ module hsv_core_alu_bitwise_setup
 
   always_ff @(posedge clk_core) begin
     if (~stall) begin
-      out_alu_data <= in_alu_data;
       out_valid <= in_valid;
+      out_alu_data <= in_alu_data;
 
       unique case (in_alu_data.bitwise_select)
-        ALU_BITWISE_AND:  out_shift_lo <= in_read_rs1 & operand_b;
-        ALU_BITWISE_OR:   out_shift_lo <= in_read_rs1 | operand_b;
-        ALU_BITWISE_XOR:  out_shift_lo <= in_read_rs1 ^ operand_b;
-        ALU_BITWISE_PASS: out_shift_lo <= shift_left ? '0 : in_read_rs1;
+        ALU_BITWISE_AND:  out_shift_lo <= operand_a & operand_b;
+        ALU_BITWISE_OR:   out_shift_lo <= operand_a | operand_b;
+        ALU_BITWISE_XOR:  out_shift_lo <= operand_a ^ operand_b;
+        ALU_BITWISE_PASS: out_shift_lo <= shift_left ? '0 : operand_a;
       endcase
 
-      if (shift_left) out_shift_hi <= in_read_rs1;
+      if (shift_left) out_shift_hi <= operand_a;
       else
         out_shift_hi <= {($bits(
             word
-        )) {in_alu_data.sign_extend & in_read_rs1[$bits(
-            in_read_rs1
+        )) {in_alu_data.sign_extend & operand_a[$bits(
+            operand_a
         )-1]}};
 
       // According to RISC-V spec, higher bits in the shift count must
@@ -237,15 +237,27 @@ module hsv_core_alu_shift_add
     input adder_in   in_adder_b,
 
     output logic         out_valid,
-    output commit_data_t out_commit_data
+    output commit_data_t out
 );
 
-  logic adder_carry;
   word adder_q, shift_q, shift_discarded;
+  logic adder_carry;
 
+  // All three types of shifts (sll, slr, sra) are implemented using a single
+  // right shifter. The shifter takes a 64-bit input (32-bit high + 32-bit low).
+  //
+  // If x is the data to shift and n is the number of bits to shift, each type
+  // of shift is translated to right shifts as follows:
+  //
+  // srl (x  >> n): {0000...0000, x} >> n
+  // sra (x >>> n): {ssss...ssss, x} >> n where s = x[31]
+  // sll (x  << n):  {x, 0000..0000} >> (32 - n)
+  //
+  // Higher half of the result is always discarded.
   assign {shift_discarded, shift_q} = {in_shift_hi, in_shift_lo} >> in_shift_count;
 
   always_comb begin
+    // The 33-bit adder
     {adder_carry, adder_q} = in_adder_a + in_adder_b;
 
     // slt/slti/sltiu/sltu: set rd to 0 or 1 (zero-extended to XLEN)
@@ -267,12 +279,12 @@ module hsv_core_alu_shift_add
 
   always_ff @(posedge clk_core) begin
     if (~stall) begin
-      out_commit_data.pc <= in_alu_data.common.pc;
       out_valid <= in_valid;
+      out.common <= in_alu_data.common;
 
       unique case (in_alu_data.out_select)
-        ALU_OUT_ADDER: out_commit_data.result <= adder_q;
-        ALU_OUT_SHIFT: out_commit_data.result <= shift_q;
+        ALU_OUT_ADDER: out.result <= adder_q;
+        ALU_OUT_SHIFT: out.result <= shift_q;
       endcase
     end
 
