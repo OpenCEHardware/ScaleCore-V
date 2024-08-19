@@ -4,7 +4,7 @@ module hsv_core_alu
 
     // Sequential signals
     input logic clk_core,
-    input logic rst_core,
+    input logic rst_core_n,
 
     // Flush signals
     input  logic flush_req,
@@ -80,7 +80,7 @@ module hsv_core_alu
       .WIDTH($bits(commit_data))
   ) alu_2_commit (
       .clk_core,
-      .rst_core,
+      .rst_core_n,
 
       .stall,
       .flush_req,
@@ -94,8 +94,8 @@ module hsv_core_alu
       .out_valid
   );
 
-  always_ff @(posedge clk_core or negedge rst_core)
-    if (~rst_core) flush_ack <= 0;
+  always_ff @(posedge clk_core or negedge rst_core_n)
+    if (~rst_core_n) flush_ack <= 0;
     else flush_ack <= flush_req;
 
 endmodule
@@ -240,7 +240,7 @@ module hsv_core_alu_shift_add
     output commit_data_t out
 );
 
-  word adder_q, shift_q, shift_discarded;
+  word adder_q, alu_q, shift_q, shift_discarded;
   logic adder_carry;
 
   // All three types of shifts (sll, slr, sra) are implemented using a single
@@ -275,17 +275,32 @@ module hsv_core_alu_shift_add
     // done by the previous substage. The extra bit from the adder output
     // is the comparison's result (1 if src1 < src2, 0 otherwise).
     if (in_alu_data.compare) adder_q = word'(adder_carry);
+
+    unique case (in_alu_data.out_select)
+      ALU_OUT_ADDER: alu_q = adder_q;
+      ALU_OUT_SHIFT: alu_q = shift_q;
+    endcase
   end
+
+   word out_next_pc, out_result;
+   logic out_illegal;
+   common_data_t out_common;
+
+   assign out.jump = 0;
+   assign out.trap = out_illegal;
+   assign out.common = out_common;
+   assign out.result = out_result;
+   assign out.next_pc = out_next_pc;
+   assign out.writeback = 1;
 
   always_ff @(posedge clk_core) begin
     if (~stall) begin
       out_valid <= in_valid;
-      out.common <= in_alu_data.common;
 
-      unique case (in_alu_data.out_select)
-        ALU_OUT_ADDER: out.result <= adder_q;
-        ALU_OUT_SHIFT: out.result <= shift_q;
-      endcase
+      out_common <= in_alu_data.common;
+      out_result <= alu_q;
+      out_illegal <= in_alu_data.illegal;
+      out_next_pc <= in_alu_data.common.pc_increment;
     end
 
     if (flush_req) out_valid <= 0;

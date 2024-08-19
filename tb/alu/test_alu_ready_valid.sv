@@ -2,7 +2,7 @@ module test_alu_ready_valid;
   import hsv_core_pkg::*;
   // Clock and Reset
   logic clk_core;
-  logic rst_core;
+  logic rst_core_n;
 
   // DUT signals
   logic flush_req;
@@ -19,7 +19,7 @@ module test_alu_ready_valid;
   // Instantiate DUT (Device Under Test)
   hsv_core_alu dut (
       .clk_core(clk_core),
-      .rst_core(rst_core),
+      .rst_core_n(rst_core_n),
       .flush_req(flush_req),
       .flush_ack(flush_ack),
       .alu_data(alu_data),
@@ -38,8 +38,8 @@ module test_alu_ready_valid;
 
   // Reset logic
   initial begin
-    rst_core = 0;
-    #20 rst_core = 1;
+    rst_core_n = 0;
+    #20 rst_core_n = 1;
   end
 
   // Waveform dump
@@ -57,10 +57,12 @@ module test_alu_ready_valid;
     out_ready = 1;
 
     // Wait for reset
-    wait (rst_core);
+    wait (rst_core_n);
 
     // Test case 1: Basic AND operation
     wait (in_ready);
+
+    alu_data.illegal = 0;
 
     alu_data.common.pc = '0;
     alu_data.common.rs1 = 32'h00000010;

@@ -2,7 +2,7 @@ module hs_skid_buffer #(
     int WIDTH = 1
 ) (
     input logic clk_core,
-    input logic rst_core,
+    input logic rst_core_n,
 
     output logic stall,
     input  logic flush_req,
