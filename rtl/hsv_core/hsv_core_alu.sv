@@ -29,8 +29,8 @@ module hsv_core_alu
   word          shift_lo;
   word          shift_hi;
   shift         shift_count;
-  word          adder_a;
-  word          adder_b;
+  adder_in      adder_a;
+  adder_in      adder_b;
 
   logic         valid_shift_add;
   commit_data_t commit_data_temp;
@@ -116,13 +116,13 @@ module hsv_core_alu_bitwise_setup
     output word       out_shift_lo,
     output word       out_shift_hi,
     output shift      out_shift_count,
-    output word       out_adder_a,
-    output word       out_adder_b
+    output adder_in   out_adder_a,
+    output adder_in   out_adder_b
 );
 
-  logic shift_left;
-  word operand_a_flip, operand_b, operand_b_flip, operand_b_neg;
-  word in_read_rs1, in_read_rs2;
+  word in_read_rs1, in_read_rs2, operand_b;
+  logic operand_b_non_zero, shift_left;
+  adder_in operand_a_ext, operand_a_flip, operand_b_ext, operand_b_flip, operand_b_neg;
 
   // Extract read registers from the in_alu_data struct
   assign in_read_rs1 = in_alu_data.common.rs1;
@@ -131,15 +131,16 @@ module hsv_core_alu_bitwise_setup
   // Left-shifts by zero is an edge case. We convert them to right-shifts by
   // zero. Try to follow on what would happen if it were not checked for.
   // Regarding operand_b_neg and out_shift_count below, note that -0 = 0.
-  assign shift_left = in_alu_data.negate & (operand_b != '0);
+  assign shift_left = in_alu_data.negate & operand_b_non_zero;
+
+  assign operand_a_ext = {in_read_rs1[$bits(in_read_rs1)-1], in_read_rs1};
+  assign operand_b_ext = {operand_b[$bits(operand_b)-1], operand_b};
 
   assign operand_b = in_alu_data.is_immediate ? in_alu_data.common.immediate : in_read_rs2;
-  assign operand_b_neg = in_alu_data.negate ? -operand_b : operand_b;
+  assign operand_b_neg = in_alu_data.negate ? -operand_b_ext : operand_b_ext;
+  assign operand_b_non_zero = operand_b != '0;
 
   always_comb begin
-    operand_a_flip = in_read_rs1;
-    operand_b_flip = operand_b_neg;
-
     // Conditionally converts from two's complement to excess-2^31 (offset
     // binary). This makes it trivial to compare signed integers, at the
     // cost of breaking two's complement math.
@@ -155,8 +156,27 @@ module hsv_core_alu_bitwise_setup
     // | 10000001     | 1          | 129                     |
     // | ...          | ...        | ...                     |
     // | 11111111     | 127        | 255                     |
-    operand_a_flip[$bits(operand_a_flip)-1] ^= in_alu_data.flip_signs;
-    operand_b_flip[$bits(operand_b_flip)-1] ^= in_alu_data.flip_signs;
+    //
+    // We need to extend with an additional 33th bit in order prevent adder
+    // overflows from affecting results. Remember that, at this point,
+    // operand_b has already been negated (comparison is implemented as
+    // a subtraction).
+    operand_a_flip = operand_a_ext;
+    operand_b_flip = operand_b_neg;
+
+    if (in_alu_data.flip_signs) begin
+      // slt (signed): flip the 33th bit to make unsigned comparisons work
+      operand_a_flip[$bits(operand_a_flip)-1] = ~operand_a_flip[$bits(operand_a_flip)-1];
+      operand_b_flip[$bits(operand_b_flip)-1] = ~operand_b_flip[$bits(operand_b_flip)-1];
+    end else begin
+      // sltu (unsigned)
+      // a is zero or positive (sign = 0)
+      // b is zero or negative (sign depends on whether it's zero)
+      //
+      // Rationale: q = (+a) + (-b)
+      operand_a_flip[$bits(operand_a_flip)-1] = 0;
+      operand_b_flip[$bits(operand_b_flip)-1] = operand_b_non_zero;
+    end
   end
 
   always_ff @(posedge clk_core) begin
@@ -186,8 +206,13 @@ module hsv_core_alu_bitwise_setup
         default:          out_shift_count <= '0;
       endcase
 
-      out_adder_a <= in_alu_data.pc_relative ? in_alu_data.common.pc : operand_a_flip;
+      out_adder_a <= operand_a_flip;
       out_adder_b <= operand_b_flip;
+
+      // auipc: add immediate (b) to program counter
+      // The 33th bit is ignored in this case, so we set it to 0
+      if (in_alu_data.pc_relative)
+        out_adder_a <= {1'b0, in_alu_data.common.pc};
     end
 
     if (flush_req) out_valid <= 0;
@@ -208,8 +233,8 @@ module hsv_core_alu_shift_add
     input word       in_shift_lo,
     input word       in_shift_hi,
     input shift      in_shift_count,
-    input word       in_adder_a,
-    input word       in_adder_b,
+    input adder_in   in_adder_a,
+    input adder_in   in_adder_b,
 
     output logic         out_valid,
     output commit_data_t out_commit_data
@@ -221,6 +246,8 @@ module hsv_core_alu_shift_add
   assign {shift_discarded, shift_q} = {in_shift_hi, in_shift_lo} >> in_shift_count;
 
   always_comb begin
+    {adder_carry, adder_q} = in_adder_a + in_adder_b;
+
     // slt/slti/sltiu/sltu: set rd to 0 or 1 (zero-extended to XLEN)
     // depending on src1 < src2. Signed comparisons are mapped to unsigned
     // equivalents by the previous bitwise/setup ALU substage. In order to
@@ -231,15 +258,10 @@ module hsv_core_alu_shift_add
     // <=> (+src1) + (-src2) < 0
     //
     // As src1, src2 >= 0 (they are unsigned), we can extend both to
-    // equivalent signed versions by introduce a 33rd bit to each operand
-    // before adding. We don't have to negate src2: that has already been
-    // done by the previous substage. Then, the adder output's extra bit
-    // is the comparison's result. Since less-than is the only ALU
-    // comparison operator required by the RISC-V base, and this whole
-    // extra bit business won't interfere with the lower 32 bits in any
-    // manner, we simply hard-code the input sign bits to 0/+ and 1/-,
-    // respectively.
-    {adder_carry, adder_q} = {1'b0, in_adder_a} + {1'b1, in_adder_b};
+    // equivalent signed versions by introducing a 33rd bit to each operand
+    // before adding. We don't have to negate src2, that has already been
+    // done by the previous substage. The extra bit from the adder output
+    // is the comparison's result (1 if src1 < src2, 0 otherwise).
     if (in_alu_data.compare) adder_q = word'(adder_carry);
   end
 

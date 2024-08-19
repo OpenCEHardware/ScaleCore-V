@@ -2,6 +2,9 @@ package hsv_core_pkg;
 
   typedef logic [31:0] word;
 
+  // ALU adder requires an additional 33th bit to implement slt/sltu
+  typedef logic [$bits(word):0] adder_in;
+
   // Execute-Memory Stage
   typedef logic [4:0] shift;
 
