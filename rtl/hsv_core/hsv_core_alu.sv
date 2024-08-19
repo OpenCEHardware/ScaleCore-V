@@ -180,8 +180,11 @@ module hsv_core_alu_bitwise_setup
         )-1]}};
 
       // According to RISC-V spec, higher bits in the shift count must
-      // be silently discarded
-      out_shift_count <= operand_b_neg[$bits(out_shift_count)-1:0];
+      // be silently discarded. Only shift if ALU_BITWISE_PASS
+      unique case (in_alu_data.bitwise_select)
+        ALU_BITWISE_PASS: out_shift_count <= operand_b_neg[$bits(out_shift_count)-1:0];
+        default:          out_shift_count <= '0;
+      endcase
 
       out_adder_a <= in_alu_data.pc_relative ? in_alu_data.common.pc : operand_a_flip;
       out_adder_b <= operand_b_flip;
@@ -213,7 +216,6 @@ module hsv_core_alu_shift_add
 );
 
   logic adder_carry;
-  word  out_q;
   word adder_q, shift_q, shift_discarded;
 
   assign {shift_discarded, shift_q} = {in_shift_hi, in_shift_lo} >> in_shift_count;
@@ -243,13 +245,12 @@ module hsv_core_alu_shift_add
 
   always_ff @(posedge clk_core) begin
     if (~stall) begin
-      out_commit_data.result <= out_q;
       out_commit_data.pc <= in_alu_data.common.pc;
       out_valid <= in_valid;
 
       unique case (in_alu_data.out_select)
-        ALU_OUT_ADDER: out_q <= adder_q;
-        ALU_OUT_SHIFT: out_q <= shift_q;
+        ALU_OUT_ADDER: out_commit_data.result <= adder_q;
+        ALU_OUT_SHIFT: out_commit_data.result <= shift_q;
       endcase
     end
 
