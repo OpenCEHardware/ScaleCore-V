@@ -4,6 +4,8 @@ vtop_dir = $(call per_target,vtop_dir)
 vtop_exe = $(call per_target,vtop_exe)
 
 vl_main = $(call per_target,vl_main)
+vl_main_sv = $(call per_target,vl_main_sv)
+
 vl_flags = $(call per_target,vl_flags)
 vl_cflags = $(call per_target,vl_cflags)
 vl_ldflags = $(call per_target,vl_ldflags)
@@ -18,6 +20,7 @@ define target/sim/setup
   $(setup_verilator_target)
 
   $$(call target_var,vl_main) := $$(strip $$(call require_core_paths,$$(rule_top),vl_main))
+  $$(call target_var,vl_main_sv) := $$(filter %.sv %.v,$$(vl_main))
 endef
 
 define target/sim/rules
@@ -81,7 +84,7 @@ define verilator_target_rules
   vtop_mk_stamp := $$(vtop_dir)/stamp
   vtop_dep_file := $$(vtop_dir)/Vtop__ver.d
 
-  vtop_cpp_deps := \
+  vtop_src_deps := \
     $$(foreach dep,$$(dep_tree/$$(rule_top)),$$(call core_paths,$$(dep),vl_files)) \
     $$(vl_main)
 
@@ -89,7 +92,7 @@ define verilator_target_rules
   $$(vtop_dep_file):
 
   $$(vtop_exe): export VPATH := $$(src)
-  $$(vtop_exe): $$(vtop_mk_stamp) $$(vtop_cpp_deps)
+  $$(vtop_exe): $$(vtop_mk_stamp) $$(vtop_src_deps)
 	$$(call run_submake,BUILD) $$(if $$(V),,-s) -C $$(vtop_dir) -f Vtop.mk
 	@touch -c $$@
 
@@ -113,7 +116,11 @@ define final_vflags
     $(call target_var,vl_cflags), \
     $(call target_var,vl_ldflags))
 
-  $$(call target_var,vl_flags) += --Mdir $$(vtop_dir)
+  $$(call target_var,vl_flags) := \
+    $$(if $$(vl_main_sv),--main --timing) \
+    $$(vl_flags) \
+    --Mdir $$(vtop_dir)
+
   $$(call target_var,vl_cflags) := $$(strip $$(vl_cflags))
   $$(call target_var,vl_ldflags) := $$(strip $$(vl_ldflags))
 

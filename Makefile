@@ -1,5 +1,5 @@
 top := hsv_core
-core_dirs := rtl sim target
+core_dirs := rtl target tb
 
 .PHONY: all
 
