@@ -27,13 +27,12 @@ package hsv_core_pkg;
   typedef struct packed {
     logic negate;
     logic flip_signs;
-    logic bitwise_select;
+    logic [1:0] bitwise_select;
     logic sign_extend;
     logic is_immediate;
     logic compare;
     logic out_select;
-    word  pc_relative;
-
+    logic pc_relative;
     common_data_t common;
   } alu_data_t;
 

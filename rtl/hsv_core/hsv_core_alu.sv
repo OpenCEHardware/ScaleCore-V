@@ -72,7 +72,7 @@ module hsv_core_alu
       .in_adder_b(adder_b),
 
       .out_valid(valid_shift_add),
-      .out_commit_data(commit_data_temp),
+      .out_commit_data(commit_data_temp)
   );
 
   // Buffering pipe
@@ -181,7 +181,7 @@ module hsv_core_alu_bitwise_setup
 
       // According to RISC-V spec, higher bits in the shift count must
       // be silently discarded
-      out_shift_count <= operand_b_neg[$bits(out_shift_count)-1];
+      out_shift_count <= operand_b_neg[$bits(out_shift_count)-1:0];
 
       out_adder_a <= in_alu_data.pc_relative ? in_alu_data.common.pc : operand_a_flip;
       out_adder_b <= operand_b_flip;
