@@ -9,13 +9,13 @@ module hsv_core_branch
 
     // Input Channel (sink) signals
     input  branch_data_t branch_data,
-    output logic         in_ready,
-    input  logic         in_valid,
+    output logic         ready_o,
+    input  logic         valid_i,
 
     // Output channel (source) signals
     output commit_data_t commit_data,
-    input  logic         out_ready,
-    output logic         out_valid
+    input  logic         ready_i,
+    output logic         valid_o
 );
 
   logic         stall;
@@ -35,13 +35,13 @@ module hsv_core_branch
       .stall,
       .flush_req,
 
-      .in_valid,
+      .valid_i,
       .in_branch_data(branch_data),
 
-      .out_valid(valid_cond_target),
+      .valid_o(valid_cond_target),
       .out_branch_data(branch_data_cond_target),
 
-      .out_taken(taken),
+      .out_taken (taken),
       .out_target(target)
   );
 
@@ -52,13 +52,13 @@ module hsv_core_branch
       .stall,
       .flush_req,
 
-      .in_valid(valid_cond_target),
+      .valid_i(valid_cond_target),
       .in_branch_data(branch_data_cond_target),
       .in_taken(taken),
       .in_target(target),
 
       .out(out_jump),
-      .out_valid(valid_jump)
+      .valid_o(valid_jump)
   );
 
   // Buffering pipe
@@ -72,12 +72,12 @@ module hsv_core_branch
       .flush_req,
 
       .in(out_jump),
-      .in_ready,
-      .in_valid(valid_jump),
+      .ready_o,
+      .valid_i(valid_jump),
 
       .out(commit_data),
-      .out_ready,
-      .out_valid
+      .ready_i,
+      .valid_o
   );
 
   always_ff @(posedge clk_core or negedge rst_core_n)
@@ -94,16 +94,17 @@ module hsv_core_branch_cond_target
     input logic stall,
     input logic flush_req,
 
-    input logic         in_valid,
+    input logic         valid_i,
     input branch_data_t in_branch_data,
 
-    output logic         out_valid,
+    output logic         valid_o,
     output branch_data_t out_branch_data,
     output logic         out_taken,
     output word          out_target
 );
 
-  word operand_a, operand_a_flip, operand_b, operand_b_flip, subtract_discarded, target, target_base;
+  word
+      operand_a, operand_a_flip, operand_b, operand_b_flip, subtract_discarded, target, target_base;
   logic cond_equal, cond_less_than, taken;
 
   assign operand_a = in_branch_data.common.rs1;
@@ -130,23 +131,21 @@ module hsv_core_branch_cond_target
       BRANCH_COND_LESS_THAN: taken = cond_less_than;
     endcase
 
-    if (in_branch_data.negate)
-      taken = ~taken;
+    if (in_branch_data.negate) taken = ~taken;
 
-    if (in_branch_data.unconditional)
-      taken = 1;
+    if (in_branch_data.unconditional) taken = 1;
   end
 
   always_ff @(posedge clk_core) begin
     if (~stall) begin
-      out_valid <= in_valid;
+      valid_o <= valid_i;
       out_branch_data <= in_branch_data;
 
       out_taken <= taken;
       out_target <= target;
     end
 
-    if (flush_req) out_valid <= 0;
+    if (flush_req) valid_o <= 0;
   end
 
 endmodule
@@ -159,12 +158,12 @@ module hsv_core_branch_jump
     input logic stall,
     input logic flush_req,
 
-    input logic         in_valid,
+    input logic         valid_i,
     input branch_data_t in_branch_data,
     input logic         in_taken,
     input word          in_target,
 
-    output logic         out_valid,
+    output logic         valid_o,
     output commit_data_t out
 );
 
@@ -175,11 +174,11 @@ module hsv_core_branch_jump
   assign mispredict = final_pc != in_branch_data.predicted;
 
   // Trap if target address is not aligned to a 4-byte boundary
-  assign alignment_exception = in_taken & (in_target[$bits(word) - $bits(pc_ptr) - 1:0] != '0);
+  assign alignment_exception = in_taken & (in_target[$bits(word)-$bits(pc_ptr)-1:0] != '0);
 
   always_ff @(posedge clk_core) begin
     if (~stall) begin
-      out_valid <= in_valid;
+      valid_o <= valid_i;
 
       out.jump <= mispredict;
       out.trap <= alignment_exception;
@@ -189,7 +188,7 @@ module hsv_core_branch_jump
       out.writeback <= in_branch_data.link;
     end
 
-    if (flush_req) out_valid <= 0;
+    if (flush_req) valid_o <= 0;
   end
 
 endmodule

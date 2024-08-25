@@ -8,12 +8,12 @@ module test_alu_ready_valid;
   logic flush_req;
   logic flush_ack;
 
-  logic in_ready;
-  logic in_valid;
+  logic ready_o;
+  logic valid_i;
   alu_data_t alu_data;
 
-  logic out_ready;
-  logic out_valid;
+  logic ready_i;
+  logic valid_o;
   commit_data_t commit_data;
 
   // Instantiate DUT (Device Under Test)
@@ -23,11 +23,11 @@ module test_alu_ready_valid;
       .flush_req(flush_req),
       .flush_ack(flush_ack),
       .alu_data(alu_data),
-      .in_ready(in_ready),
-      .in_valid(in_valid),
+      .ready_o(ready_o),
+      .valid_i(valid_i),
       .commit_data(commit_data),
-      .out_ready(out_ready),
-      .out_valid(out_valid)
+      .ready_i(ready_i),
+      .valid_o(valid_o)
   );
 
   // Clock generation
@@ -52,15 +52,15 @@ module test_alu_ready_valid;
   initial begin
     // Initialize inputs
     flush_req = 0;
-    in_valid  = 0;
+    valid_i  = 0;
     alu_data  = '0;
-    out_ready = 1;
+    ready_i = 1;
 
     // Wait for reset
     wait (rst_core_n);
 
     // Test case 1: Basic AND operation
-    wait (in_ready);
+    wait (ready_o);
 
     alu_data.illegal = 0;
 
@@ -78,19 +78,19 @@ module test_alu_ready_valid;
     alu_data.out_select = ALU_OUT_SHIFT;
     alu_data.pc_relative = 0;
 
-    in_valid = 1;
+    valid_i = 1;
 
     // Wait for output
-    wait (out_valid);
+    wait (valid_o);
     if (commit_data.result == (32'h00000010 & 32'h00000010)) begin
       $display("Test case 1 passed.");
     end else begin
       $display("Test case 1 failed.");
     end
 
-    in_valid = 0;
+    valid_i = 0;
 
-    wait (in_ready & ~out_valid) alu_data.common.pc = '0;
+    wait (ready_o & ~valid_o) alu_data.common.pc = '0;
     alu_data.common.rs1 = 32'h5A5A5A5A;
     alu_data.common.rs2 = 32'h5A5A5A5A;
     alu_data.common.immediate = 32'h5A5A5A5A;
@@ -104,12 +104,12 @@ module test_alu_ready_valid;
     alu_data.out_select = ALU_OUT_SHIFT;
     alu_data.pc_relative = 0;
 
-    in_valid = 1;
+    valid_i = 1;
 
     // Test case 2: OR operation with immediate
 
     // Wait for output
-    wait (out_valid);
+    wait (valid_o);
     if (commit_data.result == (32'h5A5A5A5A | 32'h5A5A5A5A)) begin
       $display("Test case 2 passed.");
     end else begin

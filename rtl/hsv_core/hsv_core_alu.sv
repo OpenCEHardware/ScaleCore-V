@@ -12,13 +12,13 @@ module hsv_core_alu
 
     // Input Channel (sink) signals
     input alu_data_t alu_data,
-    output logic in_ready,
-    input logic in_valid,
+    output logic ready_o,
+    input logic valid_i,
 
     // Output (source) signals
     output commit_data_t commit_data,
-    input logic out_ready,
-    output logic out_valid
+    input logic ready_i,
+    output logic valid_o
 );
 
   logic         stall;
@@ -43,10 +43,10 @@ module hsv_core_alu
       .stall,
       .flush_req,
 
-      .in_valid,
+      .valid_i,
       .in_alu_data(alu_data),
 
-      .out_valid(valid_setup),
+      .valid_o(valid_setup),
       .out_alu_data(alu_data_setup),
 
       .out_shift_lo(shift_lo),
@@ -63,7 +63,7 @@ module hsv_core_alu
       .stall,
       .flush_req,
 
-      .in_valid(valid_setup),
+      .valid_i(valid_setup),
       .in_alu_data(alu_data_setup),
       .in_shift_lo(shift_lo),
       .in_shift_hi(shift_hi),
@@ -72,7 +72,7 @@ module hsv_core_alu
       .in_adder_b(adder_b),
 
       .out(out_shift_add),
-      .out_valid(valid_shift_add)
+      .valid_o(valid_shift_add)
   );
 
   // Buffering pipe
@@ -86,12 +86,12 @@ module hsv_core_alu
       .flush_req,
 
       .in(out_shift_add),
-      .in_ready,
-      .in_valid(valid_shift_add),
+      .ready_o,
+      .valid_i(valid_shift_add),
 
       .out(commit_data),
-      .out_ready,
-      .out_valid
+      .ready_i,
+      .valid_o
   );
 
   always_ff @(posedge clk_core or negedge rst_core_n)
@@ -108,10 +108,10 @@ module hsv_core_alu_bitwise_setup
     input logic stall,
     input logic flush_req,
 
-    input logic      in_valid,
+    input logic      valid_i,
     input alu_data_t in_alu_data,
 
-    output logic      out_valid,
+    output logic      valid_o,
     output alu_data_t out_alu_data,
     output word       out_shift_lo,
     output word       out_shift_hi,
@@ -181,7 +181,7 @@ module hsv_core_alu_bitwise_setup
 
   always_ff @(posedge clk_core) begin
     if (~stall) begin
-      out_valid <= in_valid;
+      valid_o <= valid_i;
       out_alu_data <= in_alu_data;
 
       unique case (in_alu_data.bitwise_select)
@@ -193,11 +193,7 @@ module hsv_core_alu_bitwise_setup
 
       if (shift_left) out_shift_hi <= operand_a;
       else
-        out_shift_hi <= {($bits(
-            word
-        )) {in_alu_data.sign_extend & operand_a[$bits(
-            operand_a
-        )-1]}};
+        out_shift_hi <= {($bits(word)) {in_alu_data.sign_extend & operand_a[$bits(operand_a)-1]}};
 
       // According to RISC-V spec, higher bits in the shift count must
       // be silently discarded. Only shift if ALU_BITWISE_PASS
@@ -211,11 +207,10 @@ module hsv_core_alu_bitwise_setup
 
       // auipc: add immediate (b) to program counter
       // The 33th bit is ignored in this case, so we set it to 0
-      if (in_alu_data.pc_relative)
-        out_adder_a <= {1'b0, in_alu_data.common.pc};
+      if (in_alu_data.pc_relative) out_adder_a <= {1'b0, in_alu_data.common.pc};
     end
 
-    if (flush_req) out_valid <= 0;
+    if (flush_req) valid_o <= 0;
   end
 
 endmodule
@@ -228,7 +223,7 @@ module hsv_core_alu_shift_add
     input logic stall,
     input logic flush_req,
 
-    input logic      in_valid,
+    input logic      valid_i,
     input alu_data_t in_alu_data,
     input word       in_shift_lo,
     input word       in_shift_hi,
@@ -236,7 +231,7 @@ module hsv_core_alu_shift_add
     input adder_in   in_adder_a,
     input adder_in   in_adder_b,
 
-    output logic         out_valid,
+    output logic         valid_o,
     output commit_data_t out
 );
 
@@ -282,20 +277,20 @@ module hsv_core_alu_shift_add
     endcase
   end
 
-   word out_next_pc, out_result;
-   logic out_illegal;
-   common_data_t out_common;
+  word out_next_pc, out_result;
+  logic out_illegal;
+  common_data_t out_common;
 
-   assign out.jump = 0;
-   assign out.trap = out_illegal;
-   assign out.common = out_common;
-   assign out.result = out_result;
-   assign out.next_pc = out_next_pc;
-   assign out.writeback = 1;
+  assign out.jump = 0;
+  assign out.trap = out_illegal;
+  assign out.common = out_common;
+  assign out.result = out_result;
+  assign out.next_pc = out_next_pc;
+  assign out.writeback = 1;
 
   always_ff @(posedge clk_core) begin
     if (~stall) begin
-      out_valid <= in_valid;
+      valid_o <= valid_i;
 
       out_common <= in_alu_data.common;
       out_result <= alu_q;
@@ -303,7 +298,7 @@ module hsv_core_alu_shift_add
       out_next_pc <= in_alu_data.common.pc_increment;
     end
 
-    if (flush_req) out_valid <= 0;
+    if (flush_req) valid_o <= 0;
   end
 
 endmodule
