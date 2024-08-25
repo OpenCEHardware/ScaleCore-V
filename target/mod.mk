@@ -1,1 +1,1 @@
-subdirs :=
+subdirs := alu_DE1soc
