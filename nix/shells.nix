@@ -39,6 +39,7 @@ with pkgs; let
           numpy
           pillow
         ]))
+        verible
         verilator
       ] ++ lib.optionals withQuartus [
         kermit

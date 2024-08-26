@@ -1,0 +1,5 @@
+Git hooks implement automatic linting and formatting . They are not enabled by
+default due to security reasons. To enable them for a particular clone, do the
+following:
+
+$ git config core.hooksPath git-hooks
