@@ -1,11 +1,20 @@
-cores := test_alu_ready_valid
+cores := tb_hsv_core_alu tb_hsv_core_masking
 
-define core/test_alu_ready_valid
+define core/tb_hsv_core_alu
   $(this)/deps := hsv_core_alu
   $(this)/targets := sim
 
-  $(this)/rtl_top := test_alu_ready_valid
+  $(this)/rtl_top := tb_hsv_core_alu
 
-  $(this)/vl_main := test_alu_ready_valid.sv
+  $(this)/vl_main := tb_hsv_core_alu.sv
+endef
+
+define core/tb_hsv_core_masking
+  $(this)/deps := hsv_core_masking
+  $(this)/targets := sim
+
+  $(this)/rtl_top := tb_hsv_core_masking
+
+  $(this)/vl_main := tb_hsv_core_masking.sv
 endef
 

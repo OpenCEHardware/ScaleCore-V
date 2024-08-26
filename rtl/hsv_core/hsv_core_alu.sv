@@ -279,7 +279,7 @@ module hsv_core_alu_shift_add
 
   word out_next_pc, out_result;
   logic out_illegal;
-  common_data_t out_common;
+  exec_mem_common_t out_common;
 
   assign out.jump = 0;
   assign out.trap = out_illegal;

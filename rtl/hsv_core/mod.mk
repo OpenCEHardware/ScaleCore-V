@@ -1,4 +1,4 @@
-cores := hsv_core_pkg hsv_core_alu hsv_core_branch
+cores := hsv_core_pkg hsv_core_alu hsv_core_branch hsv_core_masking
 
 define core
   $(this)/deps := hsv_core_alu hsv_core_pkg 
@@ -25,4 +25,11 @@ define core/hsv_core_branch
 
   $(this)/rtl_top := hsv_core_branch
   $(this)/rtl_files := hsv_core_branch.sv
+endef
+
+define core/hsv_core_masking
+  $(this)/deps := hsv_core_pkg
+
+  $(this)/rtl_top := hsv_core_masking
+  $(this)/rtl_files := hsv_core_masking.sv
 endef
