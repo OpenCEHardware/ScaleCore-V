@@ -1,9 +1,16 @@
 {
-  # Cambiar esto en el futuro para obtener versiones más recientes de paquetes.
-  # Se requiere `nix flake update` luego de cambiar esta línea, para actualizar flake.lock
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/24.05";
+  inputs = {
+    # Cambiar esto en el futuro para obtener versiones más recientes de paquetes.
+    # Se requiere `nix flake update` luego de cambiar esta línea, para actualizar flake.lock
+    nixpkgs.url = "github:nixos/nixpkgs/24.05";
 
-  outputs = { self, nixpkgs }:
+    nix-appimage = {
+      url = "github:ralismark/nix-appimage";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = { self, nixpkgs, nix-appimage }:
     let
       system = "x86_64-linux";
 
@@ -32,7 +39,15 @@
       };
     in
     {
-      devShells.${system} = import ./nix/shells.nix { inherit pkgs; };
       formatter.${system} = pkgs.nixpkgs-fmt;
+
+      inherit (nix-appimage) bundlers;
+      devShells.${system} = import ./nix/shells.nix { inherit pkgs; };
+
+      packages.${system} = pkgs.lib.mapAttrs
+        (name: shell: pkgs.callPackage ./nix/bundle.nix {
+          inherit name shell;
+        })
+        self.devShells.${system};
     };
 }
