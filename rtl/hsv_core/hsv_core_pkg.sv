@@ -24,7 +24,7 @@ package hsv_core_pkg;
       reg_addr rs1_addr;
       reg_addr rs2_addr;
       reg_addr rd_addr;
-
+      word immediate;
     } common_data_t;
 
 //      ______________________________________
@@ -176,11 +176,11 @@ package hsv_core_pkg;
     // In this case we use a one-hot vector notation to avoid adding extra
     // decoding logic. On downside is unknown behavour should the signal
     // erroneously flip one bit
-    typedef enum logic [3:0] {
-      SELECT_ALU = 4'b0001,
-      SELECT_BRANCH = 4'b0010,
-      SELECT_MEM = 4'b0100,
-      SELECT_CSR = 4'b1000
+    typedef struct packed{
+      logic alu;
+      logic branch;
+      logic ctrl_status;
+      logic mem;
     } exec_select_t;
 
   // -------------- Issue structs ---------------
