@@ -1,4 +1,4 @@
-cores := hsv_core_pkg hsv_core_alu hsv_core_branch hsv_core_masking hsv_core_regfile
+cores := hsv_core_pkg hsv_core_alu hsv_core_branch hsv_core_masking hsv_core_regfile hsv_core_issue hsv_core_muxing
 
 define core
   $(this)/deps := hsv_core_alu hsv_core_pkg 
@@ -39,4 +39,18 @@ define core/hsv_core_regfile
 
   $(this)/rtl_top := hsv_core_regfile
   $(this)/rtl_files := hsv_core_regfile.sv
+endef
+
+define core/hsv_core_muxing
+  $(this)/deps := hsv_core_pkg
+
+  $(this)/rtl_top := hsv_core_muxing
+  $(this)/rtl_files := hsv_core_muxing.sv
+endef
+
+define core/hsv_core_issue
+  $(this)/deps := hsv_core_pkg hsv_core_masking hsv_core_muxing hsv_core_regfile
+
+  $(this)/rtl_top := hsv_core_issue
+  $(this)/rtl_files := hsv_core_issue.sv
 endef

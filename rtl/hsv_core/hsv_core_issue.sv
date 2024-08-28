@@ -48,9 +48,23 @@ module hsv_core_issue
   branch_data_t mux_branch_data;
   ctrl_status_data_t mux_ctrl_status_data;
   mem_data_t mux_mem_data;
+  logic valid_alu_mux;
+  logic valid_branch_mux;
+  logic valid_ctrl_status_mux;
+  logic valid_mem_mux;
 
-  // Block stalls
+  // Pipes and stalls
   // TODO: Check if we want so much freefloating logic in top modules
+  logic alu_pipe_ready_i;
+  logic branch_pipe_ready_i;
+  logic ctrl_status_pipe_ready_i;
+  logic mem_pipe_ready_i;
+
+  logic alu_stall;
+  logic branch_stall;
+  logic ctrl_status_stall;
+  logic mem_stall;
+
   logic stall;
   logic hazard;
   logic hazard_stall;
@@ -58,8 +72,7 @@ module hsv_core_issue
 
   assign stall = hazard_stall | exec_mem_stall;
   assign hazard_stall = valid_i & hazard;
-  assign exec_mem_stall = (alu_valid_o & ~alu_ready_i) | (branch_valid_o & ~branch_ready_i) |
-                        (ctrl_status_valid_o & ~ctrl_status_ready_i) | (mem_valid_o & ~mem_ready_i);
+  assign exec_mem_stall = alu_stall | branch_stall | ctrl_status_stall | mem_stall;
   assign ready_o = ~stall;
 
   // Regfile
@@ -74,7 +87,7 @@ module hsv_core_issue
   // Register File
   hsv_core_regfile reg_file (
       .clk_core,
-      .rst_n,
+      .rst_n(rst_core_n),
       .rd_addr1,
       .rd_addr2,
       .wr_addr,
@@ -120,15 +133,17 @@ module hsv_core_issue
       .rd_mask,
       .valid_i(valid_maksing),
 
-      .alu_valid_o,
-      .branch_valid_o,
-      .ctrl_status_valid_o,
-      .mem_valid_o,
+      .alu_valid_o(valid_alu_mux),
+      .branch_valid_o(valid_branch_mux),
+      .ctrl_status_valid_o(valid_ctrl_status_mux),
+      .mem_valid_o(valid_mem_mux),
 
       .alu_data(mux_alu_data),
       .branch_data(mux_branch_data),
       .ctrl_status_data(mux_ctrl_status_data),
-      .mem_data(mux_mem_data)
+      .mem_data(mux_mem_data),
+
+      .hazard
   );
 
   // Third stage: Buffering pipelines (one skid buffer per PU in exec-mem)
@@ -140,12 +155,12 @@ module hsv_core_issue
       .clk_core,
       .rst_core_n,
 
-      .stall,
+      .stall(alu_stall),
       .flush_req,
 
       .in(mux_alu_data),
-      .ready_o,
-      .valid_i,
+      .ready_o(alu_pipe_ready_i),
+      .valid_i(valid_alu_mux),
 
       .out(alu_data),
       .ready_i(alu_ready_i),
@@ -159,18 +174,17 @@ module hsv_core_issue
       .clk_core,
       .rst_core_n,
 
-      .stall,
+      .stall(branch_stall),
       .flush_req,
 
       .in(mux_branch_data),
-      .ready_o,
-      .valid_i,
+      .ready_o(branch_pipe_ready_i),
+      .valid_i(valid_branch_mux),
 
       .out(branch_data),
       .ready_i(branch_ready_i),
       .valid_o(branch_valid_o)
   );
-
 
   // Control-Status
   hs_skid_buffer #(
@@ -179,18 +193,17 @@ module hsv_core_issue
       .clk_core,
       .rst_core_n,
 
-      .stall,
+      .stall(ctrl_status_stall),
       .flush_req,
 
       .in(mux_ctrl_status_data),
-      .ready_o,
-      .valid_i,
+      .ready_o(ctrl_status_pipe_ready_i),
+      .valid_i(valid_ctrl_status_mux),
 
       .out(ctrl_status_data),
       .ready_i(ctrl_status_ready_i),
       .valid_o(ctrl_status_valid_o)
   );
-
 
   // Memory
   hs_skid_buffer #(
@@ -199,12 +212,12 @@ module hsv_core_issue
       .clk_core,
       .rst_core_n,
 
-      .stall,
+      .stall(mem_stall),
       .flush_req,
 
       .in(mux_mem_data),
-      .ready_o,
-      .valid_i,
+      .ready_o(mem_pipe_ready_i),
+      .valid_i(valid_mem_mux),
 
       .out(mem_data),
       .ready_i(mem_ready_i),

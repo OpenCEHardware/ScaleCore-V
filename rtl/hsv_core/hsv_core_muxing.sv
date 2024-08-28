@@ -25,7 +25,7 @@ module hsv_core_muxing
     output logic hazard
 );
 
-  logic hazard;
+  reg_mask pending_write;
 
   assign hazard = (pending_write & mask) != '0;
 
@@ -38,14 +38,19 @@ module hsv_core_muxing
       mem_valid_o         <= common_valid & issue_data.exec_select.mem;
 
       alu_data            <= issue_data.exec_mem_data.alu_data;
-      brach_data          <= issue_data.exec_mem_data.alu_data;
-      ctrl_status_data    <= issue_data.exec_mem_data.alu_data;
-      mem_data            <= issue_data.exec_mem_data.alu_data;
+      branch_data         <= issue_data.exec_mem_data.branch_data;
+      ctrl_status_data    <= issue_data.exec_mem_data.ctrl_status_data;
+      mem_data            <= issue_data.exec_mem_data.mem_data;
     end
 
     if (~stall & valid_i) pending_write <= pending_write | rd_mask;
 
-    if (flush_req) valid_o <= 0;
+    if (flush_req) begin
+      alu_valid_o         <= 0;
+      branch_valid_o      <= 0;
+      ctrl_status_valid_o <= 0;
+      mem_valid_o         <= 0;
+    end
   end
 
 endmodule
