@@ -1,4 +1,4 @@
-module hsv_core_masking
+module hsv_core_issue_masking
   import hsv_core_pkg::*;
 (
     input logic clk_core,

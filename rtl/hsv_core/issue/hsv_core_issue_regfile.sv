@@ -1,4 +1,4 @@
-module hsv_core_regfile
+module hsv_core_issue_regfile
   import hsv_core_pkg::*;
 (
     input  logic    clk_core,

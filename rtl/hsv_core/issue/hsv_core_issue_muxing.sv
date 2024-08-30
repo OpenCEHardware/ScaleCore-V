@@ -1,4 +1,4 @@
-module hsv_core_muxing
+module hsv_core_issue_muxing
   import hsv_core_pkg::*;
 (
     input logic clk_core,

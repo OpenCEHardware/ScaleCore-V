@@ -12,7 +12,7 @@ define target/lint/rules
 
   .PHONY: $$(rule_top_path)/lint
   $$(rule_top_path)/lint: $$(strip $$(rtl))
-	$$(call run,LINT) $$(VERIBLE_LINT) $$^
+	$$(call run_no_err,LINT) $$(VERIBLE_LINT) $$^
 
   $(call target_entrypoint,$$(rule_top_path)/lint)
 endef

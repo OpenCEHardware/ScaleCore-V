@@ -85,7 +85,7 @@ module hsv_core_issue
   assign rd_addr2 = issue_data.common.rs2_addr;
 
   // Register File
-  hsv_core_regfile reg_file (
+  hsv_core_issue_regfile reg_file (
       .clk_core,
       .rst_n(rst_core_n),
       .rd_addr1,
@@ -105,7 +105,7 @@ module hsv_core_issue
 
   // First stage: Masking Logic
 
-  hsv_core_masking masking (
+  hsv_core_issue_masking masking (
       .clk_core,
 
       .stall,
@@ -122,7 +122,7 @@ module hsv_core_issue
 
   // Second stage: Muxing Logic
 
-  hsv_core_muxing muxing (
+  hsv_core_issue_muxing muxing (
       .clk_core,
 
       .stall,
