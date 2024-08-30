@@ -1,13 +1,13 @@
 module hsv_core
-import hsv_core_pkg::*;
+  import hsv_core_pkg::*;
 (
-	input  logic clk_core,
-	             rst_core_n,
+    input logic clk_core,
+    input logic rst_core_n,
 
-	if_axil.m    imem,
-	if_axib.m    dmem,
+    axib_if.m imem,
+    axil_if.m dmem,
 
-	input  logic irq_core
+    input logic irq_core
 );
 
 endmodule
