@@ -1,5 +1,5 @@
 // AXI4 full modulo prot, cache, lock, QoS, region
-interface if_axib
+interface axib_if
 #(int ADDR_WIDTH = 32,
   int DATA_WIDTH = 32,
   int ID_WIDTH   = 8);

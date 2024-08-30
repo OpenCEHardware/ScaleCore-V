@@ -1,10 +1,10 @@
 package hsv_core_pkg;
-//      ______________________________________
-//_____/ CORE
+  //      ______________________________________
+  //_____/ CORE
 
   // Constants
 
-  parameter int RegAmount = 32;
+  localparam int RegAmount = 32;
 
   // -------------- Core typedefs --------------
 
@@ -14,21 +14,28 @@ package hsv_core_pkg;
   // Instructions are 4-byte sized and aligned
   typedef logic [31:2] pc_ptr;
 
+  // Unique sequential id for issued instructions. The first instruction after
+  // a flush gets token 0, second one gets token 1, etc. The commit stage
+  // makes use of this token to select outputs from execution units in the
+  // same order those instructions were issued.
+  typedef logic [7:0] insn_token;
+
   // -------------- Core enums --------------
 
 
   // -------------- Core structs --------------
 
   typedef struct packed {
-      word pc;
-      reg_addr rs1_addr;
-      reg_addr rs2_addr;
-      reg_addr rd_addr;
-      word immediate;
-    } common_data_t;
+    word     pc;
+    word     pc_increment;
+    reg_addr rs1_addr;
+    reg_addr rs2_addr;
+    reg_addr rd_addr;
+    word     immediate;
+  } common_data_t;
 
-//      ______________________________________
-//_____/ FRONTEND STAGE
+  //      ______________________________________
+  //_____/ FRONTEND STAGE
 
 
   // -------------- Frontend typedefs --------------
@@ -44,9 +51,8 @@ package hsv_core_pkg;
 
 
 
-//      ______________________________________
-//_____/ EXECUTE-MEMORY STAGE
-
+  //      ______________________________________
+  //_____/ EXECUTE-MEMORY STAGE
 
   // -------------- Exec-Mem typedefs --------------
 
@@ -55,115 +61,168 @@ package hsv_core_pkg;
 
   typedef logic [4:0] shift;
 
-  // -------------- Exec-Mem enums -----------------
+  // Up to 31 reads and writes may be pending at any given time.
+  // Note that mem_counters might go below zero and become negative.
+  typedef logic signed [5:0] mem_counter;
 
-    // -- ALU --
+  // -------------- Exec-Mem enums and structs -----------------
 
-      typedef enum logic [0:0] {
-          ALU_OUT_ADDER,
-          ALU_OUT_SHIFT
-        } alu_out_t;
+  // -------------- Exec-Mem common structs ---------------
 
-      typedef enum logic [1:0] {
-        ALU_BITWISE_AND,
-        ALU_BITWISE_OR,
-        ALU_BITWISE_XOR,
-        ALU_BITWISE_PASS
-      } alu_bitwise_t;
+  typedef struct packed {
+    insn_token token;
+    word       pc;
+    word       pc_increment;
+    word       rs1;
+    word       rs2;
+    word       immediate;
+  } exec_mem_common_t;
 
-    // -- Branch --
+  // -- ALU --
 
-      typedef enum logic [0:0] {
-        BRANCH_COND_EQUAL,
-        BRANCH_COND_LESS_THAN
-      } branch_cond_t;
+  typedef enum logic [0:0] {
+    ALU_OUT_ADDER,
+    ALU_OUT_SHIFT
+  } alu_out_t;
 
-    // -- Control-Status --
+  typedef enum logic [1:0] {
+    ALU_BITWISE_AND,
+    ALU_BITWISE_OR,
+    ALU_BITWISE_XOR,
+    ALU_BITWISE_PASS
+  } alu_bitwise_t;
 
+  // -- Branch --
 
+  typedef enum logic [0:0] {
+    BRANCH_COND_EQUAL,
+    BRANCH_COND_LESS_THAN
+  } branch_cond_t;
 
-    // -- Memory --
+  // -- Control-Status --
 
+  // -- Memory --
 
+  typedef enum logic [0:0] {
+    MEM_DIRECTION_READ,
+    MEM_DIRECTION_WRITE
+  } mem_direction_t;
 
-  // -------------- Exec-Mem structs ---------------
+  typedef enum logic [1:0] {
+    // In the future, MEM_SIZE_DOUBLE can be added here to support RV64
+    MEM_SIZE_BYTE,
+    MEM_SIZE_HALF,
+    MEM_SIZE_WORD
+  } mem_size_t;
 
-    typedef struct packed {
-      word pc;
-      word pc_increment;
-      word rs1;
-      word rs2;
-      word immediate;
-    } exec_mem_common_t;
+  // The first 1GiB of physical address space is presumed to exclusively
+  // contain ordinary RAM and ROM, that is, bufferable and cacheable memory.
+  // Addresses outside this range are for memory-mapped I/O devices. Reads and
+  // writes to I/O space cannot be pipelined, forwarded or cached, because
+  // they can and will trigger all sorts of side effects. As such, they are
+  // usually slower than accesses to normal RAM/ROM space.
+  //
+  // This does not mean that we have a full 1GiB of available RAM. Rather,
+  // all system RAM and ROM must be mapped below the 1GiB mark and everything else
+  // must be mapped above it. The CPU core uses this division to make
+  // decisions on how to access memory. It is illegal, for example, to jump to
+  // an address within I/O space.
+  //
+  // Be sure to respect this separation between RAM/ROM and I/O when including
+  // this core in a larger system. Otherwise, memory behavior will be
+  // unpredictable. If needed, you can safely change this function to specify a
+  // different RAM/ROM-I/O split.
+  function automatic logic address_is_memory(word address);
+    return address[31:30] == '0;
+  endfunction
 
-    // -- ALU --
+  typedef enum logic [1:0] {
+    AXI_RESP_OKAY   = 2'b00,
+    AXI_RESP_EXOKAY = 2'b01,
+    AXI_RESP_SLVERR = 2'b10,
+    AXI_RESP_DECERR = 2'b11
+  } axi_resp_t;
 
-      typedef struct packed {
-        // The decoder routes all illegal instructions through ALU. The ALU will
-        // then compute some nonsensical result (discarded) and commit the exception.
-        // We handle illegal opcodes this way because traps are not actually triggered
-        // until commit, like every other instruction side effect. Thus, issue and
-        // execute have to propagate the illegal operation all the way to commit.
-        // The simplest solution is to reuse the ALU path, because ALU will never
-        // generate exceptions by itself.
-        //
-        // Note that real ALU instructions will have `illegal = 0`.
-        logic illegal;
+  function automatic logic is_axi_error(axi_resp_t resp);
+    return (resp == AXI_RESP_SLVERR) & (resp == AXI_RESP_DECERR);
+  endfunction
 
-        logic         negate;
-        logic         flip_signs;
-        alu_bitwise_t bitwise_select;
-        logic         sign_extend;
-        logic         is_immediate;
-        logic         compare;
-        alu_out_t     out_select;
-        logic         pc_relative;
-        exec_mem_common_t common;
-      } alu_data_t;
+  // -- ALU --
 
-    // -- Branch --
+  typedef struct packed {
+    // The decoder routes all illegal instructions through ALU. The ALU will
+    // then compute some nonsensical result (discarded) and commit the exception.
+    // We handle illegal opcodes this way because traps are not actually triggered
+    // until commit, like every other instruction side effect. Thus, issue and
+    // execute have to propagate the illegal operation all the way to commit.
+    // The simplest solution is to reuse the ALU path, because ALU will never
+    // generate exceptions by itself.
+    //
+    // Note that real ALU instructions will have `illegal = 0`.
+    logic illegal;
 
-      typedef struct packed {
-        word          predicted;
-        branch_cond_t cond;
-        logic         cond_signed;
-        logic         unconditional;
-        logic         negate;
-        logic         relative;
-        logic         link;
-        exec_mem_common_t common;
-      } branch_data_t;
+    logic             negate;
+    logic             flip_signs;
+    alu_bitwise_t     bitwise_select;
+    logic             sign_extend;
+    logic             is_immediate;
+    logic             compare;
+    alu_out_t         out_select;
+    logic             pc_relative;
+    exec_mem_common_t common;
+  } alu_data_t;
 
-    // -- Control-Status --
+  // -- Branch --
 
-      // Example
-      typedef struct packed {
-        word          csr_address;
-        word          csr_data;
-        logic         csr_write;
-        exec_mem_common_t common;
-      } ctrl_status_data_t;
+  typedef struct packed {
+    word              predicted;
+    branch_cond_t     cond;
+    logic             cond_signed;
+    logic             unconditional;
+    logic             negate;
+    logic             relative;
+    logic             link;
+    exec_mem_common_t common;
+  } branch_data_t;
 
-    // -- Memory --
+  // -- Control-Status --
 
-      // Example
-      typedef struct packed {
-        word          address;
-        word          store_data;
-        logic         load;
-        logic         store;
-        exec_mem_common_t common;
-      } mem_data_t;
+  // Example
+  typedef struct packed {
+    word              csr_address;
+    word              csr_data;
+    logic             csr_write;
+    exec_mem_common_t common;
+  } ctrl_status_data_t;
 
-    typedef struct packed {
-      alu_data_t         alu_data;
-      mem_data_t         mem_data;
-      branch_data_t      branch_data;
-      ctrl_status_data_t ctrl_status_data;
-    } exec_mem_data_t;
+  // -- Memory --
 
-//      ______________________________________
-//_____/ ISSUE STAGE
+  typedef struct packed {
+    mem_direction_t   direction;
+    mem_size_t        size;
+    logic             sign_extend;  // lbu/lhu vs lb/lh
+    exec_mem_common_t common;
+  } mem_data_t;
+
+  typedef struct packed {
+    mem_data_t  mem_data;
+    word        address;
+    word        write_data;
+    logic [3:0] write_strobe;
+    logic       is_memory;          // See address_is_memory() above
+    logic       unaligned_address;
+    logic [1:0] read_shift;         // Subword address bits, used for correcting read results
+  } read_write_t;
+
+  typedef struct packed {
+    alu_data_t         alu_data;
+    mem_data_t         mem_data;
+    branch_data_t      branch_data;
+    ctrl_status_data_t ctrl_status_data;
+  } exec_mem_data_t;
+
+  //      ______________________________________
+  //_____/ ISSUE STAGE
 
 
   // -------------- Issue typedefs --------------
@@ -173,44 +232,44 @@ package hsv_core_pkg;
 
   // -------------- Issue enums -----------------
 
-    // In this case we use a one-hot vector notation to avoid adding extra
-    // decoding logic. On downside is unknown behavour should the signal
-    // erroneously flip one bit
-    typedef struct packed{
-      logic alu;
-      logic branch;
-      logic ctrl_status;
-      logic mem;
-    } exec_select_t;
+  // In this case we use a one-hot vector notation to avoid adding extra
+  // decoding logic. On downside is unknown behavour should the signal
+  // erroneously flip one bit
+  typedef struct packed {
+    logic alu;
+    logic branch;
+    logic ctrl_status;
+    logic mem;
+  } exec_select_t;
 
   // -------------- Issue structs ---------------
 
-    typedef struct packed {
-      common_data_t common;
-      exec_mem_data_t exec_mem_data;
-      exec_select_t exec_select;
-    } issue_data_t;
+  typedef struct packed {
+    common_data_t   common;
+    exec_mem_data_t exec_mem_data;
+    exec_select_t   exec_select;
+  } issue_data_t;
 
-//      ______________________________________
-//_____/ COMMIT STAGE
-
-
-// -------------- Commit typedefs --------------
+  //      ______________________________________
+  //_____/ COMMIT STAGE
 
 
-
-// -------------- Commit enums -----------------
+  // -------------- Commit typedefs --------------
 
 
 
-// -------------- Commit structs ---------------
+  // -------------- Commit enums -----------------
+
+
+
+  // -------------- Commit structs ---------------
 
   typedef struct packed {
-    word          next_pc;
-    word          result;
-    logic         jump;
-    logic         trap;
-    logic         writeback;
+    word              next_pc;
+    word              result;
+    logic             jump;
+    logic             trap;
+    logic             writeback;
     exec_mem_common_t common;
   } commit_data_t;
 
