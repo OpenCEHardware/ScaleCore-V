@@ -94,9 +94,10 @@ module hsv_core_alu
       .valid_o
   );
 
-  always_ff @(posedge clk_core or negedge rst_core_n)
+  always_ff @(posedge clk_core or negedge rst_core_n) begin
     if (~rst_core_n) flush_ack <= 0;
     else flush_ack <= flush_req;
+  end
 
 endmodule
 
@@ -279,7 +280,7 @@ module hsv_core_alu_shift_add
 
   word out_next_pc, out_result;
   logic out_illegal;
-  common_data_t out_common;
+  exec_mem_common_t out_common;
 
   assign out.jump = 0;
   assign out.trap = out_illegal;

@@ -1,4 +1,4 @@
-module test_alu_ready_valid;
+module tb_hsv_core_alu;
   import hsv_core_pkg::*;
   // Clock and Reset
   logic clk_core;
