@@ -37,6 +37,12 @@ module hsv_core_issue
 
 );
 
+  // Regfile
+  reg_addr rs1_addr;
+  reg_addr rs2_addr;
+  word rs1_data;
+  word rs2_data;
+
   // Masking unit
   reg_mask mask;
   reg_mask rd_mask;
@@ -75,36 +81,20 @@ module hsv_core_issue
   assign exec_mem_stall = alu_stall | branch_stall | ctrl_status_stall | mem_stall;
   assign ready_o = ~stall;
 
-  // Regfile
-  reg_addr rd_addr1;
-  reg_addr rd_addr2;
-  word rd_data1;
-  word rd_data2;
-
-  assign rd_addr1 = issue_data.common.rs1_addr;
-  assign rd_addr2 = issue_data.common.rs2_addr;
-
   // Register File
   hsv_core_regfile reg_file (
       .clk_core,
       .rst_n(rst_core_n),
-      .rd_addr1,
-      .rd_addr2,
+      .rs1_addr,
+      .rs2_addr,
       .wr_addr,
       .wr_data,
       .wr_en,
-      .rd_data1,
-      .rd_data2
+      .rs1_data,
+      .rs2_data
   );
 
-  exec_mem_common_t exec_mem_common;
-  assign exec_mem_common.rs1 = rd_data1;
-  assign exec_mem_common.rs2 = rd_data2;
-  assign exec_mem_common.pc = issue_data.common.pc;
-  assign exec_mem_common.immediate = issue_data.common.immediate;
-
   // First stage: Masking Logic
-
   hsv_core_masking masking (
       .clk_core,
 
@@ -117,20 +107,29 @@ module hsv_core_issue
       .mask,
       .rd_mask,
       .out(issue_data_masking),
-      .valid_o(valid_maksing)
+      .valid_o(valid_maksing),
+
+      .rs1_addr,
+      .rs2_addr
   );
 
   // Second stage: Muxing Logic
-
   hsv_core_muxing muxing (
       .clk_core,
 
       .stall,
+      .alu_stall,
+      .branch_stall,
+      .ctrl_status_stall,
+      .mem_stall,
+      .exec_mem_stall,
       .flush_req,
 
       .issue_data(issue_data_masking),
       .mask,
       .rd_mask,
+      .rs1_data,
+      .rs2_data,
       .valid_i(valid_maksing),
 
       .alu_valid_o(valid_alu_mux),
@@ -147,7 +146,6 @@ module hsv_core_issue
   );
 
   // Third stage: Buffering pipelines (one skid buffer per PU in exec-mem)
-
   // ALU
   hs_skid_buffer #(
       .WIDTH($bits(alu_data))

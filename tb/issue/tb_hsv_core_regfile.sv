@@ -16,13 +16,13 @@ module tb_hsv_core_regfile;
   hsv_core_regfile dut (
       .clk_core(clk_core),
       .rst_n(rst_n),
-      .rd_addr1(rd_addr1),
-      .rd_addr2(rd_addr2),
+      .rs1_addr(rd_addr1),
+      .rs2_addr(rd_addr2),
       .wr_addr(wr_addr),
       .wr_data(wr_data),
       .wr_en(wr_en),
-      .rd_data1(rd_data1),
-      .rd_data2(rd_data2)
+      .rs1_data(rd_data1),
+      .rs2_data(rd_data2)
   );
 
   // Clock generation
