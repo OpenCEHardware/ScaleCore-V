@@ -1,5 +1,5 @@
 define core
-  $(this)/deps := hsv_core_alu hs_utils hsv_core_masking hsv_core_regfile
+  $(this)/deps := hsv_core_alu hs_utils hsv_core_issue
 
   $(this)/rtl_top := hsv_core_regfile
 

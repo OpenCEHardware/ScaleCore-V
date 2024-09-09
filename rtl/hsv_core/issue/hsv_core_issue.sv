@@ -95,7 +95,7 @@ module hsv_core_issue
   );
 
   // First stage: Masking Logic
-  hsv_core_masking masking (
+  hsv_core_issue_masking masking (
       .clk_core,
 
       .stall,
@@ -114,7 +114,7 @@ module hsv_core_issue
   );
 
   // Second stage: Muxing Logic
-  hsv_core_muxing muxing (
+  hsv_core_issue_muxing muxing (
       .clk_core,
 
       .stall,
