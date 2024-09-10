@@ -1,5 +1,5 @@
 cores := hsv_core_pkg
-subdirs := fetch issue alu mem branch foo
+subdirs := fetch issue alu branch mem commit foo
 
 define core
   $(this)/deps := \
@@ -9,6 +9,8 @@ define core
     hsv_core_alu \
     hsv_core_mem \
     hsv_core_branch \
+    hsv_core_mem \
+    hsv_core_commit \
     hsv_core_foo
 
   $(this)/rtl_top := hsv_core

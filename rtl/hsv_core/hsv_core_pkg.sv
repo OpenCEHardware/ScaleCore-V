@@ -80,6 +80,9 @@ package hsv_core_pkg;
     insn_token token;
     word       pc;
     word       pc_increment;
+    reg_addr   rs1_addr;
+    reg_addr   rs2_addr;
+    reg_addr   rd_addr;
     word       rs1;
     word       rs2;
     word       immediate;
@@ -314,6 +317,9 @@ package hsv_core_pkg;
     logic             jump;
     logic             trap;
     logic             writeback;
+    reg_mask          rd_mask;
+    logic [4:0]       trap_cause; //Check size
+    logic [31:0]      trap_value; //Check size
     exec_mem_common_t common;
   } commit_data_t;
 
