@@ -11,13 +11,14 @@ top_stamp = $(call core_stamp,$(rule_top))
 core_stamp = $(obj)/deps/$(core_info/$(1)/path)/stamp
 
 core_paths_no_dyn = \
-  $(patsubst /%,%, \
-    $(patsubst /,., \
-      $(abspath \
-        $(foreach path_elem,$(core_info/$(1)/$(2)), \
-          $(if $(patsubst /%,,$(path_elem)), \
-            $(addprefix /$(if $(3),$(3)/,$(if $(core_info/$(1)/workdir),$(core_info/$(1)/workdir)/)),$(path_elem)), \
-            $(path_elem))))))
+  $(strip \
+    $(patsubst /%,%, \
+      $(patsubst /,., \
+        $(abspath \
+          $(foreach path_elem,$(core_info/$(1)/$(2)), \
+            $(if $(patsubst /%,,$(path_elem)), \
+              $(addprefix /$(if $(3),$(3)/,$(if $(core_info/$(1)/workdir),$(core_info/$(1)/workdir)/)),$(path_elem)), \
+              $(path_elem)))))))
 
 core_paths = \
   $(call core_paths_no_dyn,$(1),$(2),$(3)) $(call core_paths_no_dyn,$(1),$(call target_var,$(2)),$(3))

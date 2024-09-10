@@ -28,6 +28,7 @@ enable_synthesis := 1
 $(foreach flag,$(subst $(comma),$(space),$(enable)),$(eval override enable_$(flag) := 1))
 $(foreach flag,$(subst $(comma),$(space),$(disable)),$(eval override enable_$(flag) :=))
 
+include mk/autococo.mk
 include mk/bin2rel.mk
 include mk/build.mk
 include mk/cc.mk

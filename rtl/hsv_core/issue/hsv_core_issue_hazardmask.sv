@@ -1,4 +1,4 @@
-module hsv_core_issue_masking
+module hsv_core_issue_hazardmask
   import hsv_core_pkg::*;
 (
     input logic clk_core,
@@ -13,10 +13,7 @@ module hsv_core_issue_masking
     output reg_mask mask,
     output reg_mask rd_mask,
     output issue_data_t out,
-    output logic valid_o,
-
-    output reg_addr rs1_addr,
-    output reg_addr rs2_addr
+    output logic valid_o
 );
 
   reg_mask rs1;
@@ -43,9 +40,6 @@ module hsv_core_issue_masking
 
       rd_mask <= rd;
       mask <= rs1 | rs2 | rd;
-
-      rs1_addr <= issue_data.common.rs1_addr;
-      rs2_addr <= issue_data.common.rs2_addr;
     end
 
     if (flush_req) valid_o <= 0;

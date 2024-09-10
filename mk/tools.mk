@@ -10,6 +10,7 @@ define find_tools_lazy
   $(call find_command_lazy,qsys-generate,QSYS_GENERATE)
   $(call find_command_lazy,quartus,QUARTUS)
   $(call find_command_lazy,verible-verilog-lint,VERIBLE_LINT)
+  $(call find_command_lazy,verible-verilog-syntax,VERIBLE_SYNTAX)
   $(call find_command_lazy,verilator,VERILATOR)
 
   $(call shell_defer,cocotb_share,$$(COCOTB_CONFIG) --share)

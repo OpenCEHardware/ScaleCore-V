@@ -34,6 +34,13 @@ package hsv_core_pkg;
     word     immediate;
   } common_data_t;
 
+  typedef struct packed {
+    word insn;
+    word pc;
+    word pc_increment;
+    logic fault;  // E.g. jump to invalid address
+  } fetch_data_t;
+
   //      ______________________________________
   //_____/ FRONTEND STAGE
 
@@ -146,6 +153,24 @@ package hsv_core_pkg;
   function automatic logic is_axi_error(axi_resp_t resp);
     return (resp == AXI_RESP_SLVERR) & (resp == AXI_RESP_DECERR);
   endfunction
+
+  typedef enum logic [1:0] {
+    AXI_BURST_FIXED = 2'b00,
+    AXI_BURST_INCR  = 2'b01,
+    AXI_BURST_WRAP  = 2'b10
+  } axi_burst_t;
+
+  // Number of bytes per transfer
+  typedef enum logic [2:0] {
+    AXI_SIZE_1   = 3'b000,
+    AXI_SIZE_2   = 3'b001,
+    AXI_SIZE_4   = 3'b010,
+    AXI_SIZE_8   = 3'b011,
+    AXI_SIZE_16  = 3'b100,
+    AXI_SIZE_32  = 3'b101,
+    AXI_SIZE_64  = 3'b110,
+    AXI_SIZE_128 = 3'b111
+  } axi_size_t;
 
   // -- ALU --
 

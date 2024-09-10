@@ -1,4 +1,4 @@
-module tb_hsv_core_regfile;
+module tb_hsv_core_issue_regfile;
   import hsv_core_pkg::*;
 
   // Testbench signals
@@ -13,7 +13,7 @@ module tb_hsv_core_regfile;
   word     rd_data2;
 
   // Instantiate the DUT (Device Under Test)
-  hsv_core_regfile dut (
+  hsv_core_issue_regfile dut (
       .clk_core(clk_core),
       .rst_n(rst_n),
       .rs1_addr(rd_addr1),

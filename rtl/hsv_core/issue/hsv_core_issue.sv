@@ -33,8 +33,10 @@ module hsv_core_issue
     // Regfile signals
     input reg_addr wr_addr,
     input word wr_data,
-    input logic wr_en
+    input logic wr_en,
 
+    // Commit feedback signals
+    input reg_mask commit_mask
 );
 
   // Regfile
@@ -43,21 +45,21 @@ module hsv_core_issue
   word rs1_data;
   word rs2_data;
 
-  // Masking unit
-  reg_mask mask;
+  // Hazard hazard_mask unit
+  reg_mask hazard_mask;
   reg_mask rd_mask;
-  issue_data_t issue_data_masking;
-  logic valid_maksing;
+  issue_data_t issue_data_hazard_mask;
+  logic valid_hazard_mask;
 
-  // Muxing unit
-  alu_data_t mux_alu_data;
-  branch_data_t mux_branch_data;
-  ctrl_status_data_t mux_ctrl_status_data;
-  mem_data_t mux_mem_data;
-  logic valid_alu_mux;
-  logic valid_branch_mux;
-  logic valid_ctrl_status_mux;
-  logic valid_mem_mux;
+  // Fork unit
+  alu_data_t fork_alu_data;
+  branch_data_t fork_branch_data;
+  ctrl_status_data_t fork_ctrl_status_data;
+  mem_data_t fork_mem_data;
+  logic valid_alu_fork;
+  logic valid_branch_fork;
+  logic valid_ctrl_status_fork;
+  logic valid_mem_fork;
 
   // Pipes and stalls
   // TODO: Check if we want so much freefloating logic in top modules
@@ -77,7 +79,7 @@ module hsv_core_issue
   logic exec_mem_stall;
 
   assign stall = hazard_stall | exec_mem_stall;
-  assign hazard_stall = valid_i & hazard;
+  assign hazard_stall = valid_hazard_mask & hazard;
   assign exec_mem_stall = alu_stall | branch_stall | ctrl_status_stall | mem_stall;
   assign ready_o = ~stall;
 
@@ -94,8 +96,8 @@ module hsv_core_issue
       .rs2_data
   );
 
-  // First stage: Masking Logic
-  hsv_core_issue_masking masking (
+  // First stage: Hazard hazard_mask generation logic
+  hsv_core_issue_hazardmask hazard_mask_stage (
       .clk_core,
 
       .stall,
@@ -104,17 +106,14 @@ module hsv_core_issue
       .issue_data,
       .valid_i,
 
-      .mask,
+      .mask(hazard_mask),
       .rd_mask,
-      .out(issue_data_masking),
-      .valid_o(valid_maksing),
-
-      .rs1_addr,
-      .rs2_addr
+      .out(issue_data_hazard_mask),
+      .valid_o(valid_hazard_mask)
   );
 
-  // Second stage: Muxing Logic
-  hsv_core_issue_muxing muxing (
+  // Second stage: Pipeline forks into each of the execution ports
+  hsv_core_issue_fork fork_stage (
       .clk_core,
 
       .stall,
@@ -125,22 +124,25 @@ module hsv_core_issue
       .exec_mem_stall,
       .flush_req,
 
-      .issue_data(issue_data_masking),
-      .mask,
+      .issue_data(issue_data_hazard_mask),
+      .mask(hazard_mask),
       .rd_mask,
+      .commit_mask,
+      .rs1_addr,
+      .rs2_addr,
       .rs1_data,
       .rs2_data,
-      .valid_i(valid_maksing),
+      .valid_i(valid_hazard_mask),
 
-      .alu_valid_o(valid_alu_mux),
-      .branch_valid_o(valid_branch_mux),
-      .ctrl_status_valid_o(valid_ctrl_status_mux),
-      .mem_valid_o(valid_mem_mux),
+      .alu_valid_o(valid_alu_fork),
+      .branch_valid_o(valid_branch_fork),
+      .ctrl_status_valid_o(valid_ctrl_status_fork),
+      .mem_valid_o(valid_mem_fork),
 
-      .alu_data(mux_alu_data),
-      .branch_data(mux_branch_data),
-      .ctrl_status_data(mux_ctrl_status_data),
-      .mem_data(mux_mem_data),
+      .alu_data(fork_alu_data),
+      .branch_data(fork_branch_data),
+      .ctrl_status_data(fork_ctrl_status_data),
+      .mem_data(fork_mem_data),
 
       .hazard
   );
@@ -156,9 +158,9 @@ module hsv_core_issue
       .stall(alu_stall),
       .flush_req,
 
-      .in(mux_alu_data),
+      .in(fork_alu_data),
       .ready_o(alu_pipe_ready_i),
-      .valid_i(valid_alu_mux),
+      .valid_i(valid_alu_fork),
 
       .out(alu_data),
       .ready_i(alu_ready_i),
@@ -175,9 +177,9 @@ module hsv_core_issue
       .stall(branch_stall),
       .flush_req,
 
-      .in(mux_branch_data),
+      .in(fork_branch_data),
       .ready_o(branch_pipe_ready_i),
-      .valid_i(valid_branch_mux),
+      .valid_i(valid_branch_fork),
 
       .out(branch_data),
       .ready_i(branch_ready_i),
@@ -194,9 +196,9 @@ module hsv_core_issue
       .stall(ctrl_status_stall),
       .flush_req,
 
-      .in(mux_ctrl_status_data),
+      .in(fork_ctrl_status_data),
       .ready_o(ctrl_status_pipe_ready_i),
-      .valid_i(valid_ctrl_status_mux),
+      .valid_i(valid_ctrl_status_fork),
 
       .out(ctrl_status_data),
       .ready_i(ctrl_status_ready_i),
@@ -213,9 +215,9 @@ module hsv_core_issue
       .stall(mem_stall),
       .flush_req,
 
-      .in(mux_mem_data),
+      .in(fork_mem_data),
       .ready_o(mem_pipe_ready_i),
-      .valid_i(valid_mem_mux),
+      .valid_i(valid_mem_fork),
 
       .out(mem_data),
       .ready_i(mem_ready_i),
