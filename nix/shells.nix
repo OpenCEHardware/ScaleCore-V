@@ -25,6 +25,7 @@ with pkgs; let
           find-libpython # Para cocotb
           pdoc3
           pytest # Para cocotb
+          pyyaml # autococo
           (py.callPackage ./cocotb-coverage.nix { })
           (py.callPackage ./peakrdl/peakrdl.nix { })
           (py.callPackage ./peakrdl/peakrdl-cheader.nix { })
