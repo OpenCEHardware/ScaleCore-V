@@ -10,7 +10,7 @@ The `hsv_core_alu` module is a two-stage Arithmetic Logic Unit (ALU) designed as
 
 - **Data Interface**: The module uses a ready-valid handshake protocol for data communication, with input (`valid_i`, `ready_o`) and output (`valid_o`, `ready_i`) signals facilitating the exchange of data between the ALU and other stages of the pipeline. The ALU receives operand data through the `alu_data` structure and outputs the results through `commit_data`.
 
-  - **First Stage - Bitwise Setup**: This stage (`hsv_core_alu_bitwise_setup`) handles the initial processing of input operands, preparing them for further arithmetic and bitwise operations. Key functions include:
+  - **First Stage - Bitwise Operations and Setup**: This stage (`hsv_core_alu_bitwise_setup`) handles the initial processing of input operands, preparing them for further arithmetic and bitwise operations. Key functions include:
       - **Logical Operations**: Implements AND, OR, XOR, and PASS operations based on control signals (PASS = no logical operation needed).
       - **Shift Operations**: Prepares data for left and right shifts, including sign-extended shifts and zero extensions.
       - **Setup for Arithmetic Operations**: Prepares operands for addition, extending them to accommodate sign bits or applying negation as required.
@@ -18,25 +18,24 @@ The `hsv_core_alu` module is a two-stage Arithmetic Logic Unit (ALU) designed as
   - **Second Stage - Shift and Add**: This stage (`hsv_core_alu_shift_add`) performs the main arithmetic and shift operations:
       - **Addition**: Implements a 33-bit addition, including handling for signed comparisons using a sign-extended representation.
       - **Shifting**: Handles logical and arithmetic shifts, both left and right, using a unified shift logic.
-      - **Comparison Operations**: Evaluates less-than comparisons using a simple arithmetic subtraction approach, adjusting signs when necessary.
+      - **Comparison Operations**: Evaluates less-than comparisons using a simple arithmetic subtraction approach, adjusting signs when necessary. This is a particular case of addittion.
 
-- **Buffering and Output**: The results from the ALU are buffered using an `hs_skid_buffer`, which manages pipeline stalls and flush requests, the correct data flow to the next stages. The buffer is parameterized to match the data width of `commit_data`.
+- **Piping **: The results from the ALU are buffered using an `hs_skid_buffer`, which manages pipeline stalls and flush requests, the correct data flow to the next stages. The buffer is parameterized to match the data width of `commit_data`.
 
 - **Control Logic**: A simple state control is implemented to manage flush acknowledgment (`flush_ack`), ensuring synchronization between flush requests and ALU operations.
 
 #### Design Considerations and Features
 
-- **Pipelining**: The ALU design is fully pipelined to enhance throughput, allowing different operations to be processed concurrently in separate stages. This means there can be up three instructions at the same time in the ALU (one in bitwise setup, one in shift and add and one buffered).
-  
-- **Ready-Valid Protocol**: Adopting this handshake protocol facilitates backpressure handling and synchronization with other pipeline stages, making the design scalable and adaptable to various system conditions.
+- **Pipelining**: The ALU design is fully pipelined to enhance throughput, allowing different operations to be processed concurrently in separate stages. This means there can be up three instructions at the same time in the ALU (one in bitwise setup, one in shift and add and one buffered at the pipe).
 
-- **Shift and Add Integration**: Every instruction produces both a shifted and a added result. Dependeding on the operation one of the outputs chosen.
+- **Shift and Add Integration**: Every instruction produces both a shifted and a added result. Depending on the operation one of the outputs chosen.
 
 - **Support for Signed and Unsigned Operations**: The module supports both signed and unsigned arithmetic and logical operations as needed for a compliant RV32I implementation.
 
 - **Modular Design**: The ALU is designed with clear modular boundaries (`bitwise_setup` and `shift_add`), allowing for easy maintenance, testing, and potential future expansions or optimizations.
 
-- **Error Handling**: Basic error signaling is incorporated, in the form of handling illegal operations flagged by input control signals.
+- **Error Handling**: When illegal intructions are detected by the decode stage issue routes the intruction 
+through ALU. This is because ALU results can be easily discarted.
 
 ## I/O
 
@@ -88,13 +87,29 @@ The `hsv_core_alu` module is a two-stage Arithmetic Logic Unit (ALU) designed as
 | `rs2`           | `word`      | The value of the second source register (rs2).                      |
 | `immediate`     | `word`      | The immediate value associated with the instruction, if applicable. |
 
+## ALU Operation Table 
+
+|Mnemonic        | `add`           | `addi`          | `sub`           | `and`             | `andi`            | `or`              | `ori`             | `xor`             | `xori`            | `sll`              | `slli`             | `srl`              | `srli`             | `sra`              | `srai`             | `slt`           | `slti`          | `sltu`          | `sltiu`         | `lui`           | `auipc`          |
+|----------------|-----------------|-----------------|-----------------|-------------------|-------------------|-------------------|-------------------|-------------------|-------------------|--------------------|--------------------|--------------------|--------------------|--------------------|--------------------|-----------------|-----------------|-----------------|-----------------|-----------------|------------------|
+|Operation       | `q = q = a + b` | `q = q = a + b` | `q = q = a - b` | `q = q = a & b`   | `q = q = a & b`   | `q = q = a | b`   | `q = q = a | b`   | `q = q = a ^ b`   | `q = q = a ^ b`   | `q = q = a << b`   | `q = q = a << b`   | `q = q = a >> b`   | `q = q = a >> b`   | `q = q = a >>> b`  | `q = q = a >>> b`  | `q = q = a < b` | `q = q = a < b` | `q = q = a < b` | `q = q = a < b` | `q = q = b`     | `q = q = pc + b` |
+|is_immediate    | 0               | 1               | 0               | 0                 | 1                 | 0                 | 1                 | 0                 | 1                 | 0                  | 1                  | 0                  | 1                  | 0                  | 1                  | 0               | 1               | 0               | 1               | 1               | 1                |
+|out_select      | `ALU_OUT_ADDER` | `ALU_OUT_ADDER` | `ALU_OUT_ADDER` | `ALU_OUT_SHIFTER` | `ALU_OUT_SHIFTER` | `ALU_OUT_SHIFTER` | `ALU_OUT_SHIFTER` | `ALU_OUT_SHIFTER` | `ALU_OUT_SHIFTER` | `ALU_OUT_SHIFTER`  | `ALU_OUT_SHIFTER`  | `ALU_OUT_SHIFTER`  | `ALU_OUT_SHIFTER`  | `ALU_OUT_SHIFTER`  | `ALU_OUT_SHIFTER`  | `ALU_OUT_ADDER` | `ALU_OUT_ADDER` | `ALU_OUT_ADDER` | `ALU_OUT_ADDER` | `ALU_OUT_ADDER` | `ALU_OUT_ADDER`  |
+|bitwise_select  | `x`             | `x`             | `x`             | `ALU_BITWISE_AND` | `ALU_BITWISE_AND` | `ALU_BITWISE_OR`  | `ALU_BITWISE_OR`  | `ALU_BITWISE_XOR` | `ALU_BITWISE_XOR` | `ALU_BITWISE_PASS` | `ALU_BITWISE_PASS` | `ALU_BITWISE_PASS` | `ALU_BITWISE_PASS` | `ALU_BITWISE_PASS` | `ALU_BITWISE_PASS` | `x`             | `x`             | 0               | `x`             | `x`             | `x`              |
+|sign_extend     | `x`             | `x`             | `x`             | `x`               | `x`               | `x`               | `x`               | `x`               | `x`               | `x`                | `x`                | 0                  | 0                  | 1                  | 1                  | `x`             | `x`             | `x`             | `x`             | `x`             | `x`              |
+|negate          | 0               | 0               | 1               | `x`               | `x`               | `x`               | `x`               | `x`               | `x`               | 1                  | 1                  | 0                  | 0                  | 0                  | 0                  | 1               | 1               | 1               | 1               | 0               | 0                |
+|flip_signs      | 0               | 0               | 0               | `x`               | `x`               | `x`               | `x`               | `x`               | `x`               | `x`                | `x`                | `x`                | `x`                | `x`                | `x`                | 1               | 1               | `x`             | 0               | 0               | 0                |
+|compare         | 0               | 0               | 0               | `x`               | `x`               | `x`               | `x`               | `x`               | `x`               | `x`                | `x`                | `x`                | `x`                | `x`                | `x`                | 1               | 1               | 1               | 1               | 0               | 0                |
+|pc_relative     | 0               | 0               | 0               | `x`               | `x`               | `x`               | `x`               | `x`               | `x`               | `x`                | `x`                | `x`                | `x`                | `x`                | `x`                | 0               | 0               | 0               | 0               | 0               | 1                |
+|common.rs1      | a               | a               | a               | a                 | a                 | a                 | a                 | a                 | a                 | a                  | a                  | a                  | a                  | a                  | a                  | a               | a               | a               | a               | 0               | `x`              |
+|common.rs2      | b               | `x`             | b               | b                 | `x`               | b                 | `x`               | b                 | `x`               | b                  | `x`                | b                  | `x`                | b                  | `x`                | b               | `x`             | b               | `x`             | `x`             | `x`              |
+|common.immediate| `x`             | b               | `x`             | `x`               | b                 | `x`               | b                 | `x`               | b                 | `x`                | b                  | `x`                | b                  | `x`                | b                  | `x`             | b               | `x`             | b               | b               | b                |
+
+
 ## Submodule Diagram
 
-Include a diagram of the submodule here, showing its inputs, outputs, and how they are connected internally. Ensure the diagram is clear and properly labeled to facilitate understanding.
+{!diagrams/uarch-alu.drawio.html!}
 
-{!diagrams/sub1.html!}
-
-## SystemVerilog Implementation
+<!-- ## SystemVerilog Implementation
 
 Include a brief description of the SystemVerilog code for the submodule, highlighting key parts of the implementation if needed for a clearer understanding.
 
@@ -118,4 +133,4 @@ module Submodule (
     // Implementation of the functionality
   end
 endmodule
-```
+``` -->

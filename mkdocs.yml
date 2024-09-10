@@ -83,7 +83,10 @@ nav:
     - Synthesis: block/synthesis.md
     - Verification: block/verification.md
     - Microarchitecture: 
-      - Arithmetic logic unit: block/microarchitecture/alu.md
+      - Arithmetic Logic Unit: block/microarchitecture/alu.md
+      - Branching Unit: block/microarchitecture/branch.md
+      - Memory Unit: block/microarchitecture/memory.md
+      - Issue Unit: block/microarchitecture/issue.md
       - Sub-module 2: block/microarchitecture/sub2.md 
 
   - About: about.md
