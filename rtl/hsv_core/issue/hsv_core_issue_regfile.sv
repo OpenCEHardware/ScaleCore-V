@@ -19,22 +19,28 @@ module hsv_core_issue_regfile
   // we use two identical memory blocks (reg_array_1 and reg_array_2).
   // Each block is responsible for providing data for one of the read
   // operations, enabling us to read from both registers concurrently.
-  logic [31:0] reg_array_1[32];
-  logic [31:0] reg_array_2[32];
+  word reg_array_1[32], reg_array_2[32];
+  word rs1_data_unfiltered, rs2_data_unfiltered;
+  logic rs1_was_x0, rs2_was_x0;
 
-  // Asynchronous read
-  // assign rd_data1 = reg_array_1[rd_addr1];
-  // assign rd_data2 = reg_array_2[rd_addr2];
+  // Architecturally, x0 is always zero. Writes to x0 are permitted, but
+  // whatever value it might hold is then treated as zero on read
+  assign rs1_data = rs1_was_x0 ? '0 : rs1_data_unfiltered;
+  assign rs2_data = rs2_was_x0 ? '0 : rs2_data_unfiltered;
 
   // Synchronous write
   always_ff @(posedge clk_core) begin
     if (wr_en) begin
-        // Both arrays are written with the same data
+      // Both arrays are written with the same data
       reg_array_1[wr_addr] <= wr_data;
       reg_array_2[wr_addr] <= wr_data;
     end
-    rs1_data <= reg_array_1[rs1_addr];
-    rs2_data <= reg_array_2[rs2_addr];
+
+    rs1_data_unfiltered <= reg_array_1[rs1_addr];
+    rs2_data_unfiltered <= reg_array_2[rs2_addr];
+
+    rs1_was_x0 <= rs1_addr == '0;
+    rs2_was_x0 <= rs2_addr == '0;
   end
 
 endmodule

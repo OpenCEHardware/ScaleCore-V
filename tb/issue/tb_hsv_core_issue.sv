@@ -55,7 +55,8 @@ module tb_hsv_core_issue;
       .mem_valid_o(mem_valid_o),
       .wr_addr(wr_addr),
       .wr_data(wr_data),
-      .wr_en(wr_en)
+      .wr_en(wr_en),
+      .commit_mask('0)  //TODO
   );
 
   // Clock generation

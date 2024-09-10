@@ -1,4 +1,4 @@
-module tb_hsv_core_masking;
+module tb_hsv_core_issue_hazardmask;
   import hsv_core_pkg::*;
 
   // Parameters
@@ -14,7 +14,7 @@ module tb_hsv_core_masking;
   reg_mask rd_mask;
 
   // Module instantiation
-  hsv_core_masking uut (
+  hsv_core_issue_hazardmask uut (
       .clk_core(clk_core),
       .stall(stall),
       .flush_req(flush_req),
@@ -33,8 +33,8 @@ module tb_hsv_core_masking;
 
   // Waveform dump
   initial begin
-    $dumpfile("tb_hsv_core_masking.vcd");  // Specify the name of the dump file
-    $dumpvars(0, tb_hsv_core_masking);  // Dump all variables in the testbench
+    $dumpfile("tb_hsv_core_issue_hazardmask.vcd");  // Specify the name of the dump file
+    $dumpvars(0, tb_hsv_core_issue_hazardmask);  // Dump all variables in the testbench
   end
 
   // Test sequence
