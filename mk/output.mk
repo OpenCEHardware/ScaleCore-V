@@ -2,7 +2,7 @@ $(V).SILENT:
 
 run = \
   $(call run_common,$(1),$(2),$(3)) \
-  $(if $(V),$(newline)$(3),;trap '[ $$? -eq 0 ] && exit 0 || echo "Exited with code $$?: $$BASH_COMMAND"' EXIT;)
+  $(if $(V),$(newline)$(3),;trap '[ $$? -eq 0 ] && exit 0 || echo "Exited with code $$?: $$BASH_COMMAND" >&2' EXIT;)
 
 run_no_err = $(call run_common,$(1),$(2),$(3))$(newline)$(3)
 
