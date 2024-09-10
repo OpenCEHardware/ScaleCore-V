@@ -45,16 +45,19 @@ module hsv_core_issue_fork
   assign hazard = (pending_write & mask) != '0;
 
   alu_data_t alu_data_next;
+  mem_data_t mem_data_next;
   branch_data_t branch_data_next;
   ctrl_status_data_t ctrl_status_data_next;
-  mem_data_t mem_data_next;
+
+  // We increment this counter each time an instruction is issued. Every
+  // instruction is issued along with a copy of token's current value. Later
+  // on, the commit stage makes use of the carried-over token to select
+  // instructions in the same order they were issued.
+  insn_token token;
 
   always_comb begin
-    pending_write_next = pending_write;
-
+    pending_write_next = pending_write & ~commit_mask;
     if (~stall & valid_i) pending_write_next |= rd_mask;
-
-    pending_write_next &= ~commit_mask;
 
     alu_data = alu_data_next;
     mem_data = mem_data_next;
@@ -74,6 +77,7 @@ module hsv_core_issue_fork
     exec_mem_common.pc = issue_data.common.pc;
     exec_mem_common.pc_increment = issue_data.common.pc_increment;
     exec_mem_common.immediate = issue_data.common.immediate;
+    exec_mem_common.token = token;
   end
 
   // issue_data_t data;
@@ -89,6 +93,8 @@ module hsv_core_issue_fork
     if (~stall) begin
       last_rs1_addr <= issue_data.common.rs1_addr;
       last_rs2_addr <= issue_data.common.rs2_addr;
+
+      if (valid_i) token <= token + 1;
     end
 
     if (~alu_stall) begin
@@ -122,6 +128,8 @@ module hsv_core_issue_fork
       branch_valid_o      <= 0;
       ctrl_status_valid_o <= 0;
       mem_valid_o         <= 0;
+
+      token               <= '0;
       pending_write       <= '0;
     end
   end
