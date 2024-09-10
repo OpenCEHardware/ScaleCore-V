@@ -4,8 +4,7 @@ module hs_skid_buffer #(
     input logic clk_core,
     input logic rst_core_n,
 
-    output logic stall,
-    input  logic flush_req,
+    input logic flush,
 
     input  logic [WIDTH - 1:0] in,
     output logic               ready_o,
@@ -19,19 +18,18 @@ module hs_skid_buffer #(
   logic was_ready, was_valid;
   logic [WIDTH - 1:0] skid_buf;
 
-  assign out = stall ? skid_buf : in;
-  assign stall = ~ready_o;
+  assign out = ready_o ? in : skid_buf;
   assign ready_o = was_ready | ~was_valid;
-  assign valid_o = valid_i | stall;
+  assign valid_o = valid_i | ~ready_o;
 
   always_ff @(posedge clk_core) begin
     was_ready <= ready_i;
-    if (~stall) begin
+    if (ready_o) begin
       skid_buf  <= in;
       was_valid <= valid_i;
     end
 
-    if (flush_req) begin
+    if (flush) begin
       was_ready <= 0;
       was_valid <= 0;
     end

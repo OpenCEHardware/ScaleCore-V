@@ -81,8 +81,10 @@ module hsv_core_mem
   logic write_balance_up, write_balance_down;
   mem_counter pending_reads, pending_writes, write_balance;
 
-  logic commit_stall, out_valid;
+  logic commit_stall, out_ready, out_valid;
   commit_data_t out_response;
+
+  assign commit_stall = ~out_ready;
 
   // Flush occurs after all pending reads and writes have completed
   logic flush, can_flush;
@@ -220,11 +222,10 @@ module hsv_core_mem
       .clk_core,
       .rst_core_n,
 
-      .stall(commit_stall),
-      .flush_req,
+      .flush(flush_req),
 
       .in(out_response),
-      .ready_o(),  // .stall is enough for this execution unit
+      .ready_o(out_ready),
       .valid_i(out_valid),
 
       .out(commit_data),

@@ -18,7 +18,8 @@ module hsv_core_branch
     output logic         valid_o
 );
 
-  logic         stall;
+  logic stall;
+  assign stall = ~ready_o;
 
   logic         valid_cond_target;
   branch_data_t branch_data_cond_target;
@@ -68,8 +69,7 @@ module hsv_core_branch
       .clk_core,
       .rst_core_n,
 
-      .stall,
-      .flush_req,
+      .flush(flush_req),
 
       .in(out_jump),
       .ready_o,

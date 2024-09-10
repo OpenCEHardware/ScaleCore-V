@@ -21,7 +21,8 @@ module hsv_core_alu
     output logic valid_o
 );
 
-  logic         stall;
+  logic stall;
+  assign stall = ~ready_o;
 
   logic         valid_setup;
   alu_data_t    alu_data_setup;
@@ -82,8 +83,7 @@ module hsv_core_alu
       .clk_core,
       .rst_core_n,
 
-      .stall,
-      .flush_req,
+      .flush(flush_req),
 
       .in(out_shift_add),
       .ready_o,

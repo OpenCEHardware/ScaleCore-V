@@ -69,9 +69,14 @@ module hsv_core_issue
   logic mem_pipe_ready_i;
 
   logic alu_stall;
+  logic mem_stall;
   logic branch_stall;
   logic ctrl_status_stall;
-  logic mem_stall;
+
+  assign alu_stall = ~alu_pipe_ready_i;
+  assign mem_stall = ~mem_pipe_ready_i;
+  assign branch_stall = ~branch_pipe_ready_i;
+  assign ctrl_status_stall = ~ctrl_status_pipe_ready_i;
 
   logic stall;
   logic hazard;
@@ -155,8 +160,7 @@ module hsv_core_issue
       .clk_core,
       .rst_core_n,
 
-      .stall(alu_stall),
-      .flush_req,
+      .flush(flush_req),
 
       .in(fork_alu_data),
       .ready_o(alu_pipe_ready_i),
@@ -174,8 +178,7 @@ module hsv_core_issue
       .clk_core,
       .rst_core_n,
 
-      .stall(branch_stall),
-      .flush_req,
+      .flush(flush_req),
 
       .in(fork_branch_data),
       .ready_o(branch_pipe_ready_i),
@@ -193,8 +196,7 @@ module hsv_core_issue
       .clk_core,
       .rst_core_n,
 
-      .stall(ctrl_status_stall),
-      .flush_req,
+      .flush(flush_req),
 
       .in(fork_ctrl_status_data),
       .ready_o(ctrl_status_pipe_ready_i),
@@ -212,8 +214,7 @@ module hsv_core_issue
       .clk_core,
       .rst_core_n,
 
-      .stall(mem_stall),
-      .flush_req,
+      .flush(flush_req),
 
       .in(fork_mem_data),
       .ready_o(mem_pipe_ready_i),
