@@ -6,9 +6,10 @@ module hsv_core_issue_fork
 
     input logic stall,
     input logic alu_stall,
+    input logic foo_stall,
+    input logic mem_stall,
     input logic branch_stall,
     input logic ctrl_status_stall,
-    input logic mem_stall,
     input logic exec_mem_stall,
 
     input logic flush_req,
@@ -24,14 +25,16 @@ module hsv_core_issue_fork
     input logic valid_i,
 
     output logic alu_valid_o,
+    output logic foo_valid_o,
+    output logic mem_valid_o,
     output logic branch_valid_o,
     output logic ctrl_status_valid_o,
-    output logic mem_valid_o,
 
     output alu_data_t alu_data,
+    output foo_data_t foo_data,
+    output mem_data_t mem_data,
     output branch_data_t branch_data,
     output ctrl_status_data_t ctrl_status_data,
-    output mem_data_t mem_data,
 
     output logic hazard
 );
@@ -45,6 +48,7 @@ module hsv_core_issue_fork
   assign hazard = (pending_write & mask) != '0;
 
   alu_data_t alu_data_next;
+  foo_data_t foo_data_next;
   mem_data_t mem_data_next;
   branch_data_t branch_data_next;
   ctrl_status_data_t ctrl_status_data_next;
@@ -60,16 +64,19 @@ module hsv_core_issue_fork
     if (~stall & valid_i) pending_write_next |= rd_mask;
 
     alu_data = alu_data_next;
+    foo_data = foo_data_next;
     mem_data = mem_data_next;
     branch_data = branch_data_next;
     ctrl_status_data = ctrl_status_data_next;
 
     alu_data.common.rs1 = rs1_data;
+    foo_data.common.rs1 = rs1_data;
     mem_data.common.rs1 = rs1_data;
     branch_data.common.rs1 = rs1_data;
     ctrl_status_data.common.rs1 = rs1_data;
 
     alu_data.common.rs2 = rs2_data;
+    foo_data.common.rs2 = rs2_data;
     mem_data.common.rs2 = rs2_data;
     branch_data.common.rs2 = rs2_data;
     ctrl_status_data.common.rs2 = rs2_data;
@@ -103,6 +110,18 @@ module hsv_core_issue_fork
       alu_data_next.common <= exec_mem_common;
     end
 
+    if (~foo_stall) begin
+      foo_valid_o          <= common_valid & issue_data.exec_select.foo;
+      foo_data_next        <= issue_data.exec_mem_data.foo_data;
+      foo_data_next.common <= exec_mem_common;
+    end
+
+    if (~mem_stall) begin
+      mem_valid_o          <= common_valid & issue_data.exec_select.mem;
+      mem_data_next        <= issue_data.exec_mem_data.mem_data;
+      mem_data_next.common <= exec_mem_common;
+    end
+
     if (~branch_stall) begin
       branch_valid_o          <= common_valid & issue_data.exec_select.branch;
       branch_data_next        <= issue_data.exec_mem_data.branch_data;
@@ -113,12 +132,6 @@ module hsv_core_issue_fork
       ctrl_status_valid_o          <= common_valid & issue_data.exec_select.ctrl_status;
       ctrl_status_data_next        <= issue_data.exec_mem_data.ctrl_status_data;
       ctrl_status_data_next.common <= exec_mem_common;
-    end
-
-    if (~mem_stall) begin
-      mem_valid_o          <= common_valid & issue_data.exec_select.mem;
-      mem_data_next        <= issue_data.exec_mem_data.mem_data;
-      mem_data_next.common <= exec_mem_common;
     end
 
     pending_write <= pending_write_next;

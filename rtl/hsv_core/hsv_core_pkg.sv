@@ -172,6 +172,10 @@ package hsv_core_pkg;
     AXI_SIZE_128 = 3'b111
   } axi_size_t;
 
+  // -- Foo --
+
+  // Define structs and enums for your foo unit
+
   // -- ALU --
 
   typedef struct packed {
@@ -239,8 +243,22 @@ package hsv_core_pkg;
     logic [1:0] read_shift;         // Subword address bits, used for correcting read results
   } read_write_t;
 
+  // -- Foo --
+
+  // Add new decode signals as needed by your foo unit
+  typedef struct packed {
+    // "bar, baz, qux" are dummy signals, replace them with something useful
+    logic             bar;
+    logic             baz;
+    logic             qux;
+    exec_mem_common_t common;
+  } foo_data_t;
+
+  // Unified decode data for all execution units
+
   typedef struct packed {
     alu_data_t         alu_data;
+    foo_data_t         foo_data;
     mem_data_t         mem_data;
     branch_data_t      branch_data;
     ctrl_status_data_t ctrl_status_data;
@@ -258,13 +276,14 @@ package hsv_core_pkg;
   // -------------- Issue enums -----------------
 
   // In this case we use a one-hot vector notation to avoid adding extra
-  // decoding logic. On downside is unknown behavour should the signal
+  // decoding logic. One downside is undefined behaviour should the signal
   // erroneously flip one bit
   typedef struct packed {
     logic alu;
+    logic foo;
+    logic mem;
     logic branch;
     logic ctrl_status;
-    logic mem;
   } exec_select_t;
 
   // -------------- Issue structs ---------------

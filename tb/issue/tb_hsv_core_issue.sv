@@ -14,23 +14,26 @@ module tb_hsv_core_issue;
   logic valid_i;
 
   alu_data_t alu_data;
+  foo_data_t foo_data;
+  mem_data_t mem_data;
   branch_data_t branch_data;
   ctrl_status_data_t ctrl_status_data;
-  mem_data_t mem_data;
 
   logic alu_ready_i;
+  logic foo_ready_i;
+  logic mem_ready_i;
   logic branch_ready_i;
   logic ctrl_status_ready_i;
-  logic mem_ready_i;
 
   logic alu_valid_o;
+  logic foo_valid_o;
+  logic mem_valid_o;
   logic branch_valid_o;
   logic ctrl_status_valid_o;
-  logic mem_valid_o;
 
-  reg_addr wr_addr;
   word wr_data;
   logic wr_en;
+  reg_addr wr_addr;
 
   // Instantiate the hsv_core_issue module
   hsv_core_issue uut (
@@ -41,18 +44,25 @@ module tb_hsv_core_issue;
       .issue_data(issue_data),
       .ready_o(ready_o),
       .valid_i(valid_i),
+
       .alu_data(alu_data),
+      .foo_data(foo_data),
+      .mem_data(mem_data),
       .branch_data(branch_data),
       .ctrl_status_data(ctrl_status_data),
-      .mem_data(mem_data),
+
       .alu_ready_i(alu_ready_i),
+      .foo_ready_i(foo_ready_i),
+      .mem_ready_i(mem_ready_i),
       .branch_ready_i(branch_ready_i),
       .ctrl_status_ready_i(ctrl_status_ready_i),
-      .mem_ready_i(mem_ready_i),
+
       .alu_valid_o(alu_valid_o),
+      .foo_valid_o(foo_valid_o),
+      .mem_valid_o(mem_valid_o),
       .branch_valid_o(branch_valid_o),
       .ctrl_status_valid_o(ctrl_status_valid_o),
-      .mem_valid_o(mem_valid_o),
+
       .wr_addr(wr_addr),
       .wr_data(wr_data),
       .wr_en(wr_en),
