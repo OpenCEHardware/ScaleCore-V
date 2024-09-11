@@ -87,6 +87,7 @@ nav:
       - Branching Unit: block/microarchitecture/branch.md
       - Memory Unit: block/microarchitecture/memory.md
       - Issue Unit: block/microarchitecture/issue.md
+      - Commit Unit: block/microarchitecture/commit.md
       - Sub-module 2: block/microarchitecture/sub2.md 
 
   - About: about.md
