@@ -2,10 +2,12 @@ cores := tb_hsv_core_alu
 
 define core/tb_hsv_core_alu
   $(this)/deps := hsv_core_alu
-  $(this)/targets := sim
+  $(this)/targets := test
 
-  $(this)/rtl_top := tb_hsv_core_alu
+  $(this)/rtl_top := hsv_core_alu
 
-  $(this)/vl_main := tb_hsv_core_alu.sv
+  $(this)/cocotb_paths := .
+  $(this)/cocotb_modules := tb_hsv_core_alu
+
 endef
 
