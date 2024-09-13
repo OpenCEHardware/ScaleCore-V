@@ -10,6 +10,7 @@ package hsv_core_pkg;
 
   typedef logic [31:0] word;
   typedef logic [4:0] reg_addr;
+  typedef logic [4:0] alu_opcode;
 
   // Instructions are 4-byte sized and aligned
   typedef logic [31:2] pc_ptr;
@@ -101,6 +102,30 @@ package hsv_core_pkg;
     ALU_BITWISE_XOR,
     ALU_BITWISE_PASS
   } alu_bitwise_t;
+
+    typedef enum logic [4:0] {
+    OPCODE_ADD,
+    OPCODE_ADDI,
+    OPCODE_SUB,
+    OPCODE_AND,
+    OPCODE_ANDI,
+    OPCODE_OR,
+    OPCODE_ORI,
+    OPCODE_XOR,
+    OPCODE_XORI,
+    OPCODE_SLL,
+    OPCODE_SLLI,
+    OPCODE_SRL,
+    OPCODE_SRLI,
+    OPCODE_SRA,
+    OPCODE_SRAI,
+    OPCODE_SLT,
+    OPCODE_SLTI,
+    OPCODE_SLTU,
+    OPCODE_SLTIU,
+    OPCODE_LUI,
+    OPCODE_AUIPC
+    } alu_opcode_t;
 
   // -- Branch --
 
@@ -283,10 +308,10 @@ package hsv_core_pkg;
   // erroneously flip one bit
   typedef struct packed {
     logic alu;
-    logic foo;
-    logic mem;
     logic branch;
     logic ctrl_status;
+    logic mem;
+    logic foo;
   } exec_select_t;
 
   // -------------- Issue structs ---------------
@@ -318,8 +343,8 @@ package hsv_core_pkg;
     logic             trap;
     logic             writeback;
     reg_mask          rd_mask;
-    logic [4:0]       trap_cause; //Check size
-    logic [31:0]      trap_value; //Check size
+    logic [4:0]       trap_cause;  //Check size
+    logic [31:0]      trap_value;  //Check size
     exec_mem_common_t common;
   } commit_data_t;
 
