@@ -53,9 +53,12 @@ endef
 define target/test/rules
   $(verilator_target_rules)
 
-  .PHONY: $$(rule_top_path)/test
+  .PHONY: $$(obj)/results.xml $$(rule_top_path)/test
 
-  $$(rule_top_path)/test &: $$(vtop_exe) $$(call core_objs,$$(rule_top),obj_deps) | $$(obj)
+  $$(rule_top_path)/test: $$(obj)/results.xml
+	$$(if $$(enable_gtkwave),$$(call run_no_err,GTKWAVE) $$(GTKWAVE) $$(obj)/dump.$$(if $$(enable_fst),fst,vcd))
+
+  $$(obj)/results.xml: $$(vtop_exe) $$(call core_objs,$$(rule_top),obj_deps) | $$(obj)
 	$$(call run_no_err,COCOTB) cd $$(obj) && rm -f log.txt results.xml && \
 		LIBPYTHON_LOC=$$(cocotb_libpython) COCOTB_RESULTS_FILE=results.xml \
 		$$(cocotb_pythonpath_decl) MODULE=$$(subst $$(space),$$(comma),$$(cocotb_modules)) \
