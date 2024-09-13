@@ -32,9 +32,8 @@ define exit_build
 endef
 
 define setup_obj
-  export build_id_text := $$(strip $$(call per_target,build_id_text))
-  $$(call target_var,build_id) := $$(shell echo -n "$$$$build_id_text" | sha1sum | head -c8)
-  unexport build_id_text
+  build_id_text := $$(strip $$(call per_target,build_id_text))
+  $$(call target_var,build_id) := $$(shell echo -n $$(build_id_text) | sha1sum | head -c8)
 
   $$(obj): export CONTENTS := $$(build_id_text)
   $$(obj):
