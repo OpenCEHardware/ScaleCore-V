@@ -95,7 +95,7 @@ module hsv_core_alu
   );
 
   always_ff @(posedge clk_core or negedge rst_core_n) begin
-    if (~rst_core_n) flush_ack <= 0;
+    if (~rst_core_n) flush_ack <= 1;
     else flush_ack <= flush_req;
   end
 

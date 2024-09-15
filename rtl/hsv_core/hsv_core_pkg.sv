@@ -103,7 +103,7 @@ package hsv_core_pkg;
     ALU_BITWISE_PASS
   } alu_bitwise_t;
 
-    typedef enum logic [4:0] {
+  typedef enum logic [4:0] {
     OPCODE_ADD,
     OPCODE_ADDI,
     OPCODE_SUB,
@@ -125,7 +125,7 @@ package hsv_core_pkg;
     OPCODE_SLTIU,
     OPCODE_LUI,
     OPCODE_AUIPC
-    } alu_opcode_t;
+  } alu_opcode_t;
 
   // -- Branch --
 
@@ -135,6 +135,29 @@ package hsv_core_pkg;
   } branch_cond_t;
 
   // -- Control-Status --
+
+  typedef enum logic [1:0] {
+    USER_MODE       = 2'b00,
+    SUPERVISOR_MODE = 2'b01,
+    MACHINE_MODE    = 2'b11
+  } privilege_t;
+
+  typedef enum logic [1:0] {
+    CSR_RW_00 = 2'b00,
+    CSR_RW_01 = 2'b01,
+    CSR_RW_10 = 2'b10,
+    CSR_RO    = 2'b11
+  } csr_access_t;
+
+  typedef struct packed {
+    csr_access_t access;
+    privilege_t privilege;
+    logic [7:0] index;
+  } csr_num_t;
+
+  function automatic csr_is_read_only(csr_num_t csr);
+    return csr.access == CSR_RO;
+  endfunction
 
   // -- Memory --
 
@@ -244,13 +267,14 @@ package hsv_core_pkg;
 
   // -- Control-Status --
 
-  // Example
   typedef struct packed {
-    word              csr_address;
-    word              csr_data;
-    logic             csr_write;
+    logic             read;
+    logic             write;
+    logic             write_flip;
+    logic             write_mask;
+    logic             is_immediate;
     exec_mem_common_t common;
-  } ctrl_status_data_t;
+  } ctrlstatus_data_t;
 
   // -- Memory --
 
@@ -285,11 +309,11 @@ package hsv_core_pkg;
   // Unified decode data for all execution units
 
   typedef struct packed {
-    alu_data_t         alu_data;
-    foo_data_t         foo_data;
-    mem_data_t         mem_data;
-    branch_data_t      branch_data;
-    ctrl_status_data_t ctrl_status_data;
+    alu_data_t        alu_data;
+    foo_data_t        foo_data;
+    mem_data_t        mem_data;
+    branch_data_t     branch_data;
+    ctrlstatus_data_t ctrlstatus_data;
   } exec_mem_data_t;
 
   //      ______________________________________
@@ -309,7 +333,7 @@ package hsv_core_pkg;
   typedef struct packed {
     logic alu;
     logic branch;
-    logic ctrl_status;
+    logic ctrlstatus;
     logic mem;
     logic foo;
   } exec_select_t;

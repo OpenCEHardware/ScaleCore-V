@@ -81,7 +81,7 @@ module hsv_core_branch
   );
 
   always_ff @(posedge clk_core or negedge rst_core_n)
-    if (~rst_core_n) flush_ack <= 0;
+    if (~rst_core_n) flush_ack <= 1;
     else flush_ack <= flush_req;
 
 endmodule
