@@ -62,7 +62,7 @@ define target/test/rules
 	$$(call run_no_err,COCOTB) cd $$(obj) && rm -f log.txt results.xml && \
 		LIBPYTHON_LOC=$$(cocotb_libpython) COCOTB_RESULTS_FILE=results.xml \
 		$$(cocotb_pythonpath_decl) MODULE=$$(subst $$(space),$$(comma),$$(cocotb_modules)) \
-		$$(src)/$$< | tee log.txt
+		$$(src)/$$< $$(if $$(enable_trace),--trace) | tee log.txt
 
   $(call target_entrypoint,$$(rule_top_path)/test)
 endef

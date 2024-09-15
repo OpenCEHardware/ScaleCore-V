@@ -1,0 +1,133 @@
+[*]
+[*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
+[*] Sun Sep 15 19:07:51 2024
+[*]
+[dumpfile] "/home/jachm/Repos/hscale-v/build/tb_hsv_core_alu/test-612fb85c/dump.vcd"
+[dumpfile_mtime] "Sun Sep 15 18:51:43 2024"
+[dumpfile_size] 2952246782
+[savefile] "/home/jachm/Repos/hscale-v/tb/alu/waves.gtkw"
+[timestart] 3917922
+[size] 1920 985
+[pos] -1 -1
+*-4.479821 3917959 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] hsv_core_alu_tb_top.
+[treeopen] hsv_core_alu_tb_top.alu.
+[treeopen] hsv_core_alu_tb_top.alu.setup.
+[sst_width] 297
+[signals_width] 481
+[sst_expanded] 1
+[sst_vpaned_height] 291
+@28
+hsv_core_alu_tb_top.clk_core
+@22
+[color] 6
+hsv_core_alu_tb_top.common.token[7:0]
+[color] 6
+hsv_core_alu_tb_top.common.pc[31:0]
+[color] 6
+hsv_core_alu_tb_top.common.rs1_addr[4:0]
+[color] 6
+hsv_core_alu_tb_top.common.rs2_addr[4:0]
+[color] 6
+hsv_core_alu_tb_top.common.rd_addr[4:0]
+@420
+[color] 6
+hsv_core_alu_tb_top.common.rs1[31:0]
+[color] 6
+hsv_core_alu_tb_top.common.rs2[31:0]
+@421
+[color] 6
+hsv_core_alu_tb_top.common.immediate[31:0]
+@420
+[color] 2
+hsv_core_alu_tb_top.commit_data.result[31:0]
+@28
+hsv_core_alu_tb_top.valid_i
+[color] 1
+hsv_core_alu_tb_top.ready_o
+hsv_core_alu_tb_top.alu.stall
+hsv_core_alu_tb_top.valid_o
+hsv_core_alu_tb_top.ready_i
+[color] 2
+hsv_core_alu_tb_top.commit_data.jump
+@22
+[color] 2
+hsv_core_alu_tb_top.commit_data.rd_mask[31:1]
+@28
+[color] 2
+hsv_core_alu_tb_top.commit_data.trap
+@22
+[color] 2
+hsv_core_alu_tb_top.commit_data.trap_cause[4:0]
+[color] 2
+hsv_core_alu_tb_top.commit_data.trap_value[31:0]
+@28
+[color] 2
+hsv_core_alu_tb_top.commit_data.writeback
+@22
+[color] 6
+hsv_core_alu_tb_top.common.pc_increment[31:0]
+[color] 2
+hsv_core_alu_tb_top.commit_data.next_pc[31:0]
+@28
+[color] 3
+hsv_core_alu_tb_top.opcode[4:0]
+hsv_core_alu_tb_top.alu.shift_add.adder_carry
+hsv_core_alu_tb_top.alu.alu_data.compare
+hsv_core_alu_tb_top.alu.alu_data.out_select[0]
+@24
+hsv_core_alu_tb_top.alu.shift_add.alu_q[31:0]
+hsv_core_alu_tb_top.alu.shift_add.adder_q[31:0]
+hsv_core_alu_tb_top.alu.setup.operand_a[31:0]
+hsv_core_alu_tb_top.alu.setup.operand_b[31:0]
+hsv_core_alu_tb_top.alu.setup.out_adder_a[32:0]
+@28
+hsv_core_alu_tb_top.alu.setup.out_adder_b[32:0]
+@24
+hsv_core_alu_tb_top.alu.shift_add.in_adder_a[32:0]
+@c00420
+hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+@28
+(0)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(1)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(2)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(3)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(4)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(5)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(6)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(7)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(8)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(9)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(10)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(11)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(12)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(13)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(14)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(15)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(16)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(17)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(18)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(19)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(20)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(21)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(22)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(23)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(24)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(25)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(26)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(27)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(28)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(29)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(30)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(31)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+(32)hsv_core_alu_tb_top.alu.shift_add.in_adder_b[32:0]
+@1401200
+-group_end
+@22
+hsv_core_alu_tb_top.alu.shift_add.adder_q[31:0]
+@28
+hsv_core_alu_tb_top.alu.shift_add.adder_carry
+@22
+hsv_core_alu_tb_top.alu.shift_add.alu_q[31:0]
+[pattern_trace] 1
+[pattern_trace] 0

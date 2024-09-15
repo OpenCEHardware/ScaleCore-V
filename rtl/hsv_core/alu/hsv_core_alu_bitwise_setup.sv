@@ -25,7 +25,7 @@ module hsv_core_alu_bitwise_setup
   // Left-shifts by zero is an edge case. We convert them to right-shifts by
   // zero. Try to follow on what would happen if it were not checked for.
   // Regarding operand_b_neg and out_shift_count below, note that -0 = 0.
-  assign shift_left = in_alu_data.negate & operand_b_non_zero;
+  assign shift_left = in_alu_data.negate & (operand_b[4:0] != '0);
 
   // Sign-extend to 33 bits for adder
   assign operand_a_ext = {operand_a[$bits(operand_a)-1], operand_a};

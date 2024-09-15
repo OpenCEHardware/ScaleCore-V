@@ -1,5 +1,8 @@
+`timescale 1ns / 1ps
+
 module tb_hsv_core_alu;
   import hsv_core_pkg::*;
+
   // Clock and Reset
   logic clk_core;
   logic rst_core_n;
@@ -10,7 +13,7 @@ module tb_hsv_core_alu;
 
   logic ready_o;
   logic valid_i;
-  alu_data_t alu_data;
+  alu_data_input_t alu_data;
 
   logic ready_i;
   logic valid_o;
@@ -18,16 +21,16 @@ module tb_hsv_core_alu;
 
   // Instantiate DUT (Device Under Test)
   hsv_core_alu dut (
-      .clk_core(clk_core),
-      .rst_core_n(rst_core_n),
-      .flush_req(flush_req),
-      .flush_ack(flush_ack),
-      .alu_data(alu_data),
-      .ready_o(ready_o),
-      .valid_i(valid_i),
-      .commit_data(commit_data),
-      .ready_i(ready_i),
-      .valid_o(valid_o)
+      .clk_core,
+      .rst_core_n,
+      .flush_req,
+      .flush_ack,
+      .alu_data,
+      .ready_o,
+      .valid_i,
+      .commit_data,
+      .ready_i,
+      .valid_o
   );
 
   // Clock generation
@@ -44,69 +47,60 @@ module tb_hsv_core_alu;
 
   // Waveform dump
   initial begin
-    $dumpfile("hsv_core_alu_tb.vcd");  // Specify the name of the dump file
-    $dumpvars(0, hsv_core_alu_tb);  // Dump all variables in the testbench
+    $dumpfile("tb_hsv_core_alu.vcd");  // Name of the dump file
+    $dumpvars(0, tb_hsv_core_alu);  // Dump all variables in the testbench
   end
 
   // Testbench logic
   initial begin
+
     // Initialize inputs
     flush_req = 0;
-    valid_i  = 0;
+    valid_i   = 0;
     alu_data  = '0;
-    ready_i = 1;
+    ready_i   = 1;
 
     // Wait for reset
     wait (rst_core_n);
 
-    // Test case 1: Basic AND operation
+    // Test case 1: Basic ADD operation
     wait (ready_o);
 
+    alu_data.common.token = 8'd1;
+    alu_data.common.pc = 32'd0;
+    alu_data.common.pc_increment = 32'd4;
+    alu_data.common.rs1_addr = 5'd5;
+    alu_data.common.rs2_addr = 5'd10;
+    alu_data.common.rd_addr = 5'd15;
+    alu_data.common.rs1 = 32'd1;
+    alu_data.common.rs2 = 32'd2;
+    alu_data.common.immediate = 32'd0;
+
     alu_data.illegal = 0;
-
-    alu_data.common.pc = '0;
-    alu_data.common.rs1 = 32'h00000010;
-    alu_data.common.rs2 = 32'h00000010;
-    alu_data.common.immediate = 0;
-
-    alu_data.negate = 0;
-    alu_data.flip_signs = 0;
-    alu_data.bitwise_select = ALU_BITWISE_AND;
-    alu_data.sign_extend = 0;
-    alu_data.is_immediate = 0;
-    alu_data.compare = 0;
-    alu_data.out_select = ALU_OUT_SHIFT;
-    alu_data.pc_relative = 0;
+    alu_data.opcode = OPCODE_ADD;
 
     valid_i = 1;
 
     // Wait for output
     wait (valid_o);
-    if (commit_data.result == (32'h00000010 & 32'h00000010)) begin
+    if (commit_data.result == (32'd1 + 32'd2)) begin
       $display("Test case 1 passed.");
     end else begin
       $display("Test case 1 failed.");
     end
 
+    // Test case 2: OR operation with immediate
+
     valid_i = 0;
 
     wait (ready_o & ~valid_o) alu_data.common.pc = '0;
     alu_data.common.rs1 = 32'h5A5A5A5A;
-    alu_data.common.rs2 = 32'h5A5A5A5A;
+    alu_data.common.rs2 = 32'h5ACA5A5B;
     alu_data.common.immediate = 32'h5A5A5A5A;
 
-    alu_data.negate = 0;
-    alu_data.flip_signs = 0;
-    alu_data.bitwise_select = ALU_BITWISE_OR;
-    alu_data.sign_extend = 0;
-    alu_data.is_immediate = 1;
-    alu_data.compare = 0;
-    alu_data.out_select = ALU_OUT_SHIFT;
-    alu_data.pc_relative = 0;
+    alu_data.opcode = OPCODE_ORI;
 
     valid_i = 1;
-
-    // Test case 2: OR operation with immediate
 
     // Wait for output
     wait (valid_o);
@@ -116,10 +110,10 @@ module tb_hsv_core_alu;
       $display("Test case 2 failed.");
     end
 
-    // More test cases can be added here
+    // // More test cases can be added here
 
     // Finish simulation
-    #100;
+    #10;
     $finish();
   end
 
