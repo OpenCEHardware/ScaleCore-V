@@ -103,15 +103,26 @@ module hsv_core_commit
   | mem_commit_o
   | foo_commit_o;
 
+  commit_data_t alu_committable_data;
+  commit_data_t branch_committable_data;
+  commit_data_t ctrlstatus_committable_data;
+  commit_data_t mem_committable_data;
+  commit_data_t foo_committable_data;
+
+  assign alu_committable_data = alu_committable ? alu_data : '0;
+  assign branch_committable_data = branch_committable ? branch_data : '0;
+  assign ctrlstatus_committable_data = ctrlstatus_committable ? ctrlstatus_data : '0;
+  assign mem_committable_data = mem_committable ? mem_data : '0;
+  assign foo_committable_data = foo_committable ? foo_data : '0;
+
   commit_data_t used_data;
 
-  always_comb begin : data_select
-    if (alu_committable) used_data = alu_data;
-    else if (branch_committable) used_data = branch_data;
-    else if (ctrlstatus_committable) used_data = ctrlstatus_data;
-    else if (mem_committable) used_data = mem_data;
-    else if (foo_committable) used_data = foo_data;
-  end
+  assign used_data
+  = alu_committable_data
+  | branch_committable_data
+  | ctrlstatus_committable_data
+  | mem_committable_data
+  | foo_committable_data;
 
   assign ctrl_flush_begin = used_data.jump | used_data.trap;
 
