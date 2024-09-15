@@ -127,7 +127,7 @@ module hsv_core_foo
       // Reset values go here
       // ...
 
-      flush_ack <= 0;
+      flush_ack <= 1;
     end else begin
       // Put here all sequential logic that DOES need to be reset (usually control logic)
       // ...

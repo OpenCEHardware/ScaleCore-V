@@ -9,7 +9,7 @@ module hsv_core_issue_fork
     input logic foo_stall,
     input logic mem_stall,
     input logic branch_stall,
-    input logic ctrl_status_stall,
+    input logic ctrlstatus_stall,
     input logic exec_mem_stall,
 
     input logic flush_req,
@@ -28,13 +28,13 @@ module hsv_core_issue_fork
     output logic foo_valid_o,
     output logic mem_valid_o,
     output logic branch_valid_o,
-    output logic ctrl_status_valid_o,
+    output logic ctrlstatus_valid_o,
 
     output alu_data_t alu_data,
     output foo_data_t foo_data,
     output mem_data_t mem_data,
     output branch_data_t branch_data,
-    output ctrl_status_data_t ctrl_status_data,
+    output ctrlstatus_data_t ctrlstatus_data,
 
     output logic hazard
 );
@@ -51,7 +51,7 @@ module hsv_core_issue_fork
   foo_data_t foo_data_next;
   mem_data_t mem_data_next;
   branch_data_t branch_data_next;
-  ctrl_status_data_t ctrl_status_data_next;
+  ctrlstatus_data_t ctrlstatus_data_next;
 
   // We increment this counter each time an instruction is issued. Every
   // instruction is issued along with a copy of token's current value. Later
@@ -67,19 +67,19 @@ module hsv_core_issue_fork
     foo_data = foo_data_next;
     mem_data = mem_data_next;
     branch_data = branch_data_next;
-    ctrl_status_data = ctrl_status_data_next;
+    ctrlstatus_data = ctrlstatus_data_next;
 
     alu_data.common.rs1 = rs1_data;
     foo_data.common.rs1 = rs1_data;
     mem_data.common.rs1 = rs1_data;
     branch_data.common.rs1 = rs1_data;
-    ctrl_status_data.common.rs1 = rs1_data;
+    ctrlstatus_data.common.rs1 = rs1_data;
 
     alu_data.common.rs2 = rs2_data;
     foo_data.common.rs2 = rs2_data;
     mem_data.common.rs2 = rs2_data;
     branch_data.common.rs2 = rs2_data;
-    ctrl_status_data.common.rs2 = rs2_data;
+    ctrlstatus_data.common.rs2 = rs2_data;
 
     exec_mem_common.pc = issue_data.common.pc;
     exec_mem_common.pc_increment = issue_data.common.pc_increment;
@@ -91,7 +91,7 @@ module hsv_core_issue_fork
   // assign data.common = issue_data.common;
   // assign data.exec_select = issue_data.exec_select;
   // assign data.exec_mem_data.branch_data.common = exec_mem_common;
-  // assign data.exec_mem_data.ctrl_status_data.common = exec_mem_common;
+  // assign data.exec_mem_data.ctrlstatus_data.common = exec_mem_common;
   // assign data.exec_mem_data.mem_data.common = exec_mem_common;
 
   always_ff @(posedge clk_core) begin
@@ -128,22 +128,22 @@ module hsv_core_issue_fork
       branch_data_next.common <= exec_mem_common;
     end
 
-    if (~ctrl_status_stall) begin
-      ctrl_status_valid_o          <= common_valid & issue_data.exec_select.ctrl_status;
-      ctrl_status_data_next        <= issue_data.exec_mem_data.ctrl_status_data;
-      ctrl_status_data_next.common <= exec_mem_common;
+    if (~ctrlstatus_stall) begin
+      ctrlstatus_valid_o          <= common_valid & issue_data.exec_select.ctrlstatus;
+      ctrlstatus_data_next        <= issue_data.exec_mem_data.ctrlstatus_data;
+      ctrlstatus_data_next.common <= exec_mem_common;
     end
 
     pending_write <= pending_write_next;
 
     if (flush_req) begin
-      alu_valid_o         <= 0;
-      branch_valid_o      <= 0;
-      ctrl_status_valid_o <= 0;
-      mem_valid_o         <= 0;
+      alu_valid_o        <= 0;
+      branch_valid_o     <= 0;
+      ctrlstatus_valid_o <= 0;
+      mem_valid_o        <= 0;
 
-      token               <= '0;
-      pending_write       <= '0;
+      token              <= '0;
+      pending_write      <= '0;
     end
   end
 

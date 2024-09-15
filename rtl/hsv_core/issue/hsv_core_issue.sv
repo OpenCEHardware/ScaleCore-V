@@ -19,19 +19,19 @@ module hsv_core_issue
     output foo_data_t foo_data,
     output mem_data_t mem_data,
     output branch_data_t branch_data,
-    output ctrl_status_data_t ctrl_status_data,
+    output ctrlstatus_data_t ctrlstatus_data,
 
     input logic alu_ready_i,
     input logic foo_ready_i,
     input logic mem_ready_i,
     input logic branch_ready_i,
-    input logic ctrl_status_ready_i,
+    input logic ctrlstatus_ready_i,
 
     output logic alu_valid_o,
     output logic foo_valid_o,
     output logic mem_valid_o,
     output logic branch_valid_o,
-    output logic ctrl_status_valid_o,
+    output logic ctrlstatus_valid_o,
 
     // Regfile signals
     input reg_addr wr_addr,
@@ -59,12 +59,12 @@ module hsv_core_issue
   foo_data_t fork_foo_data;
   mem_data_t fork_mem_data;
   branch_data_t fork_branch_data;
-  ctrl_status_data_t fork_ctrl_status_data;
+  ctrlstatus_data_t fork_ctrlstatus_data;
   logic valid_alu_fork;
   logic valid_foo_fork;
   logic valid_mem_fork;
   logic valid_branch_fork;
-  logic valid_ctrl_status_fork;
+  logic valid_ctrlstatus_fork;
 
   // Pipes and stalls
   // TODO: Check if we want so much freefloating logic in top modules
@@ -72,19 +72,19 @@ module hsv_core_issue
   logic foo_pipe_ready_i;
   logic mem_pipe_ready_i;
   logic branch_pipe_ready_i;
-  logic ctrl_status_pipe_ready_i;
+  logic ctrlstatus_pipe_ready_i;
 
   logic alu_stall;
   logic foo_stall;
   logic mem_stall;
   logic branch_stall;
-  logic ctrl_status_stall;
+  logic ctrlstatus_stall;
 
   assign alu_stall = ~alu_pipe_ready_i;
   assign foo_stall = ~foo_pipe_ready_i;
   assign mem_stall = ~mem_pipe_ready_i;
   assign branch_stall = ~branch_pipe_ready_i;
-  assign ctrl_status_stall = ~ctrl_status_pipe_ready_i;
+  assign ctrlstatus_stall = ~ctrlstatus_pipe_ready_i;
 
   logic stall;
   logic hazard;
@@ -93,7 +93,7 @@ module hsv_core_issue
 
   assign stall = hazard_stall | exec_mem_stall;
   assign hazard_stall = valid_hazard_mask & hazard;
-  assign exec_mem_stall = alu_stall | mem_stall | foo_stall | branch_stall | ctrl_status_stall;
+  assign exec_mem_stall = alu_stall | mem_stall | foo_stall | branch_stall | ctrlstatus_stall;
   assign ready_o = ~stall;
 
   // Register File
@@ -134,7 +134,7 @@ module hsv_core_issue
       .foo_stall,
       .mem_stall,
       .branch_stall,
-      .ctrl_status_stall,
+      .ctrlstatus_stall,
       .exec_mem_stall,
       .flush_req,
 
@@ -152,13 +152,13 @@ module hsv_core_issue
       .foo_valid_o(valid_foo_fork),
       .mem_valid_o(valid_mem_fork),
       .branch_valid_o(valid_branch_fork),
-      .ctrl_status_valid_o(valid_ctrl_status_fork),
+      .ctrlstatus_valid_o(valid_ctrlstatus_fork),
 
       .alu_data(fork_alu_data),
       .foo_data(fork_foo_data),
       .mem_data(fork_mem_data),
       .branch_data(fork_branch_data),
-      .ctrl_status_data(fork_ctrl_status_data),
+      .ctrlstatus_data(fork_ctrlstatus_data),
 
       .hazard
   );
@@ -238,24 +238,24 @@ module hsv_core_issue
 
   // Control-Status
   hs_skid_buffer #(
-      .WIDTH($bits(ctrl_status_data))
-  ) issue_2_ctrl_status (
+      .WIDTH($bits(ctrlstatus_data))
+  ) issue_2_ctrlstatus (
       .clk_core,
       .rst_core_n,
 
       .flush(flush_req),
 
-      .in(fork_ctrl_status_data),
-      .ready_o(ctrl_status_pipe_ready_i),
-      .valid_i(valid_ctrl_status_fork),
+      .in(fork_ctrlstatus_data),
+      .ready_o(ctrlstatus_pipe_ready_i),
+      .valid_i(valid_ctrlstatus_fork),
 
-      .out(ctrl_status_data),
-      .ready_i(ctrl_status_ready_i),
-      .valid_o(ctrl_status_valid_o)
+      .out(ctrlstatus_data),
+      .ready_i(ctrlstatus_ready_i),
+      .valid_o(ctrlstatus_valid_o)
   );
 
   always_ff @(posedge clk_core or negedge rst_core_n) begin
-    if (~rst_core_n) flush_ack <= 0;
+    if (~rst_core_n) flush_ack <= 1;
     else flush_ack <= flush_req;
   end
 

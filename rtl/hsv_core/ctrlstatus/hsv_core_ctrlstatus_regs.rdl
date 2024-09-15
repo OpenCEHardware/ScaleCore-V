@@ -1,0 +1,405 @@
+// See chapter 7 of the RISC-V unprivileged spec
+addrmap hsv_core_ctrlstatus_regs
+#(longint unsigned HSCALE_VERSION_MAJOR = 1,
+  longint unsigned HSCALE_VERSION_MINOR = 0)
+{
+    name = "HSCALE-V control and status registers (CSRs)";
+
+    default hw = na;
+    default sw = r;
+
+    default regwidth = 32;
+    default accesswidth = 32;
+
+    default precedence = sw;
+
+    // See section 2.2 of the privileged spec for the full list of CSRs
+
+    // CSR numbers are multiplied by 0x10 because SystemRDL requires byte addressing.
+    // Aligning to 4 bytes would have sufficed, but doing that would make it harder
+    // to quickly match CSR numbers to addrmap addresses when editing this file.
+    alignment = 0x10;
+    littleendian;
+
+    // Machine information registers
+
+    reg {
+        name = "Vendor ID";
+        desc = "JEDEC manufacturer ID of the provider of the core";
+
+        // "This register must be readable in any implementation, but a value of 0 can be
+        // returned to indicate the field is not implemented or that this is a
+        // non-commercial implementation."
+        field {
+            hw = na;
+            sw = r;
+        } VALUE[31:0] = 0;
+    } MVENDORID @ 0xF110;
+
+    reg {
+        name = "Architecture ID";
+        desc = "Encodes the base microarchitecture of the hart";
+
+        // "Open-source project architecture IDs are allocated globally by
+        // RISC-V International, and have non-zero architecture IDs with a zero
+        // most-significant-bit (MSB)."
+        // https://github.com/riscv/riscv-isa-manual/blob/main/marchid.md
+        field {
+            hw = na;
+            sw = r;
+        } VALUE[31:0] = 0xfafa;
+    } MARCHID @ 0xF120;
+
+    reg {
+        name = "Implementation ID";
+        desc = "Provides a unique encoding of the version of the processor implementation";
+
+        field {
+            hw = na;
+            sw = r;
+        } VALUE[31:0] = HSCALE_VERSION_MAJOR << 8 | HSCALE_VERSION_MINOR;
+    } MIMPID @ 0xF130;
+
+    external reg {
+        name = "Hardware thread ID";
+        desc = "Integer ID of this hart";
+
+        field {
+            hw = na;
+            sw = r;
+        } VALUE[31:0];
+    } MHARTID @ 0xF140;
+
+    reg {
+        name = "Pointer to configuration";
+        desc = "Physical address of a configuration data structure";
+
+        // We do not support this feature
+        field {
+            hw = na;
+            sw = r;
+        } VALUE[31:0] = 0;
+    } MCONFIGPTR @ 0xF150;
+
+    // Machine trap setup
+
+    reg {
+        desc = "Keeps track of and controls the hart's current operating state (lower 32 bits)";
+
+        default hw = r;
+        default sw = rw;
+
+        field {
+            desc = "M-mode: global interrupt enable";
+
+            hw = rw;
+            we;
+        } MIE[3:3] = 0;
+
+        field {
+            desc = "M-mode: previous mode interrupt enable (0: user, 1: machine)";
+
+            hw = rw;
+            we;
+        } MPIE[7:7];
+
+        enum mpp_t {
+            mpp_u = 2'b00 { desc = "Previous privilege level was user mode"; };
+            mpp_m = 2'b11 { desc = "Previous privilege level was machine mode"; };
+        };
+
+        field {
+            desc = "M-mode: previous mode before trap (00: user, 11: machine)";
+
+            encode = mpp_t;
+
+            hw = rw;
+            we;
+        } MPP[12:11];
+    } MSTATUS @ 0x3000;
+
+    reg {
+        desc = "Keeps track of and controls the hart's current operating state (higher 32 bits)";
+        // Currently, we don't support any feature from MSTATUSH
+        field { } empty[0:0] = 0;
+    } MSTATUSH @ 0x3100;
+
+    reg {
+        desc = "Reports the ISA supported by the hart";
+
+        default hw = na;
+        default sw = r;
+
+        enum mxlen_t {
+            rv32  = 2'b01;
+            rv64  = 2'b10;
+            rv128 = 2'b11;
+        };
+
+        field {
+            encode = mxlen_t;
+        } MXL[31:30] = mxlen_t::rv32;
+
+        field {
+            desc = "Atomic extension";
+        } A[0:0] = 0;
+
+        field {
+            desc = "Bit-manipulation extension";
+        } B[1:1] = 0;
+
+        field {
+            desc = "Compressed extension";
+        } C[2:2] = 0;
+
+        field {
+            desc = "Double-precision floating-point extension";
+        } D[3:3] = 0;
+
+        field {
+            desc = "RV32E/64E base ISA";
+        } E[4:4] = 0;
+
+        field {
+            desc = "Single-precision floating-point extension";
+        } F[5:5] = 0;
+
+        field {
+            desc = "Hypervisor extension";
+        } H[7:7] = 0;
+
+        field {
+            desc = "RV32I/64I/128I base ISA";
+        } I[8:8] = 1;
+
+        field {
+            desc = "Integer multiply/divide extension";
+        } M[12:12] = 0;
+
+        field {
+            desc = "User-level interrupts extension";
+        } N[13:13] = 0;
+
+        field {
+            desc = "Packed-SIMD extension";
+        } P[15:15] = 0;
+
+        field {
+            desc = "Quad-precision floating-point extension";
+        } Q[16:16] = 0;
+
+        field {
+            desc = "Supervisor mode implemented";
+        } S[18:18] = 0;
+
+        field {
+            desc = "User mode implemented";
+        } U[20:20] = 1;
+
+        field {
+            desc = "Vector extension";
+        } V[21:21] = 0;
+
+        field {
+            desc = "Non-standard extension(s) present";
+        } X[22:22] = 0;
+    } MISA @ 0x3010;
+
+    reg {
+        name = "Machine trap-handler base address";
+        desc = "Holds trap vector configuration";
+
+        field {
+            hw = r;
+            sw = rw;
+        } BASE[31:2];
+    } MTVEC @ 0x3050;
+
+    // Machine trap handling
+
+    reg {
+        name = "Scratch register for machine trap handlers";
+        desc = "";
+
+        field {
+            hw = na;
+            sw = rw;
+        } VALUE[31:0];
+    } MSCRATCH @ 0x3400;
+
+    reg {
+        name = "Machine exception program counter";
+        desc = "Address of the instruction that was interrupted or that encountered the exception";
+
+        field {
+            hw = w;
+            sw = rw;
+            we;
+        } PC[31:2]; // Note: supporting the 'C' extension would entail changing this to 31:1
+    } MEPC @ 0x3410;
+
+    reg {
+        name = "Machine trap cause";
+        desc = "Contains a code indicating the event that caused the trap";
+
+        default hw = w;
+        default sw = rw;
+        default we;
+
+        field {
+            desc = "The trap was caused by an interrupt";
+        } INTERRUPT[31:31];
+
+        field {
+            desc = "Trap code, see table 14 (mcause values after trap) in section 3.1.15 of priv spec";
+        } CODE[30:0];
+    } MCAUSE @ 0x3420;
+
+    reg {
+        name = "Machine bad address or instruction";
+        desc = "Value related to the trap (usually an address or instruction), see section 3.1.16";
+
+        field {
+            hw = w;
+            sw = rw;
+            we;
+        } VALUE[31:0];
+    } MTVAL @ 0x3430;
+
+    reg {
+        name = "Machine interrupt pending";
+        desc = "";
+
+        field {
+            hw = na;
+            sw = rw;
+        } VALUE[31:0];
+    } MIP @ 0x3440;
+
+    // Machine configuration
+
+    reg {
+        name = "Machine environment configuration register";
+        desc = "Controls certain characteristics of the execution environment for modes less privileged than M";
+        // Currently, we don't support any feature from MENVCFG
+        field { } empty[0:0] = 0;
+    } MENVCFG @ 0x30A0;
+
+    reg {
+        name = "Upper 32 bits of MENVCFG";
+        desc = "Controls certain characteristics of the execution environment for modes less privileged than M";
+        // Currently, we don't support any feature from MENVCFGH
+        field { } empty[0:0] = 0;
+    } MENVCFGH @ 0x31A0;
+
+    reg {
+        name = "Machine security configuration register";
+        desc = "Controls security features";
+        // Currently, we don't support any feature from MSECCFG
+        field { } empty[0:0] = 0;
+    } MSECCFG @ 0x7470;
+
+    reg {
+        name = "Upper 32 bits of MSECCFG";
+        desc = "Controls security features";
+        // Currently, we don't support any feature from MSECCFGH
+        field { } empty[0:0] = 0;
+    } MSECCFGH @ 0x7570;
+
+    // Machine counter/timers
+
+    external reg {
+        desc = "Number of clock cycles executed by the processor core (lower 32 bits)";
+
+        field {
+            hw = na;
+            sw = rw;
+        } VALUE[31:0] = 0;
+    } MCYCLE @ 0xB000;
+
+    external reg {
+        desc = "Number of clock cycles executed by the processor core (higher 32 bits)";
+
+        field {
+            hw = na;
+            sw = rw;
+        } VALUE[31:0] = 0;
+    } MCYCLEH @ 0xB800;
+
+    external reg {
+        desc = "Number of instructions retired by this hart (lower 32 bits)";
+
+        field {
+            hw = na;
+            sw = rw;
+        } VALUE[31:0] = 0;
+    } MINSTRET @ 0xB020;
+
+    external reg {
+        desc = "Number of instructions retired by this hart (higher 32 bits)";
+
+        field {
+            hw = na;
+            sw = rw;
+        } VALUE[31:0] = 0;
+    } MINSTRETH @ 0xB820;
+
+    // Unprivileged counter timers, unpriv spec chapter 8.1: "Zicntr" Extension for Base Counters and Timers
+    // CYCLE(H) and INSTRET(H) are read-only aliases of M-mode counters
+
+    external reg {
+        desc = "Number of clock cycles executed by the processor core (lower 32 bits)";
+
+        field {
+            hw = na;
+            sw = r;
+        } VALUE[31:0] = 0;
+    } CYCLE @ 0xC000;
+
+    external reg {
+        desc = "Number of clock cycles executed by the processor core (higher 32 bits)";
+
+        field {
+            hw = na;
+            sw = r;
+        } VALUE[31:0] = 0;
+    } CYCLEH @ 0xC800;
+
+    // TIME(H) increments at the same rate as CYCLE(H) because our clock frequency is fixed and known
+
+    external reg {
+        desc = "Wall-clock real time that has passed from an arbitrary start time in the past (lower 32 bits)";
+
+        field {
+            hw = na;
+            sw = r;
+        } VALUE[31:0] = 0;
+    } TIME @ 0xC010;
+
+    external reg {
+        desc = "Wall-clock real time that has passed from an arbitrary start time in the past (higher 32 bits)";
+
+        field {
+            hw = na;
+            sw = r;
+        } VALUE[31:0] = 0;
+    } TIMEH @ 0xC810;
+
+    external reg {
+        desc = "Number of instructions retired by this hart (lower 32 bits)";
+
+        field {
+            hw = na;
+            sw = r;
+        } VALUE[31:0] = 0;
+    } INSTRET @ 0xC020;
+
+    external reg {
+        desc = "Number of instructions retired by this hart (higher 32 bits)";
+
+        field {
+            hw = na;
+            sw = r;
+        } VALUE[31:0] = 0;
+    } INSTRETH @ 0xC820;
+};
