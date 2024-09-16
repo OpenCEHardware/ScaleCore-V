@@ -34,19 +34,14 @@ module hsv_core_issue
     output logic ctrlstatus_valid_o,
 
     // Regfile signals
-    input reg_addr wr_addr,
-    input word wr_data,
-    input logic wr_en,
+    input  word     rs1_data,
+    input  word     rs2_data,
+    output reg_addr rs1_addr,
+    output reg_addr rs2_addr,
 
     // Commit feedback signals
     input reg_mask commit_mask
 );
-
-  // Regfile
-  reg_addr rs1_addr;
-  reg_addr rs2_addr;
-  word rs1_data;
-  word rs2_data;
 
   // Hazard hazard_mask unit
   reg_mask hazard_mask;
@@ -95,19 +90,6 @@ module hsv_core_issue
   assign hazard_stall = valid_hazard_mask & hazard;
   assign exec_mem_stall = alu_stall | mem_stall | foo_stall | branch_stall | ctrlstatus_stall;
   assign ready_o = ~stall;
-
-  // Register File
-  hsv_core_issue_regfile reg_file (
-      .clk_core,
-      .rst_n(rst_core_n),
-      .rs1_addr,
-      .rs2_addr,
-      .wr_addr,
-      .wr_data,
-      .wr_en,
-      .rs1_data,
-      .rs2_data
-  );
 
   // First stage: Hazard hazard_mask generation logic
   hsv_core_issue_hazardmask hazard_mask_stage (

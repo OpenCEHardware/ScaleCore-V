@@ -51,11 +51,10 @@ module hsv_core_commit
     output word wr_data,
     output logic wr_en,
 
+    output insn_token token,
     // Issue feedback signals
-    output reg_mask commit_mask
-
+    output reg_mask   commit_mask
 );
-  insn_token token;
 
   logic alu_trap;
   logic branch_trap;

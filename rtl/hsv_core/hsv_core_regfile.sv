@@ -1,8 +1,9 @@
-module hsv_core_issue_regfile
+module hsv_core_regfile
   import hsv_core_pkg::*;
 (
-    input  logic    clk_core,
-    input  logic    rst_n,
+    input logic clk_core,
+    input logic rst_core_n,
+
     input  reg_addr rs1_addr,
     input  reg_addr rs2_addr,
     input  reg_addr wr_addr,

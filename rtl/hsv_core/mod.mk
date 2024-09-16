@@ -1,4 +1,4 @@
-cores := hsv_core_pkg
+cores := hsv_core_pkg hsv_core_regfile
 subdirs := fetch decode issue alu foo mem branch ctrlstatus commit
 
 define core
@@ -12,7 +12,8 @@ define core
     hsv_core_mem \
     hsv_core_branch \
     hsv_core_ctrlstatus \
-    hsv_core_commit
+    hsv_core_commit \
+    hsv_core_regfile
 
   $(this)/rtl_top := hsv_core
   $(this)/rtl_files := hsv_core.sv
@@ -22,4 +23,10 @@ define core/hsv_core_pkg
   $(this)/deps := if_common hs_utils
 
   $(this)/rtl_files := hsv_core_pkg.sv
+endef
+
+define core/hsv_core_regfile
+  $(this)/deps := hsv_core_pkg
+
+  $(this)/rtl_files := hsv_core_regfile.sv
 endef
