@@ -212,7 +212,7 @@ addrmap hsv_core_ctrlstatus_regs
         field {
             hw = r;
             sw = rw;
-        } BASE[31:2];
+        } BASE[31:2] = 0;
     } MTVEC @ 0x3050;
 
     // Machine trap handling
