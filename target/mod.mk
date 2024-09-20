@@ -1,1 +1,1 @@
-subdirs := alu_DE1soc
+subdirs := alu_DE1soc hosted
