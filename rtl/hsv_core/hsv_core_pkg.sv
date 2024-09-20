@@ -202,7 +202,7 @@ package hsv_core_pkg;
   } axi_resp_t;
 
   function automatic logic is_axi_error(axi_resp_t resp);
-    return (resp == AXI_RESP_SLVERR) & (resp == AXI_RESP_DECERR);
+    return (resp == AXI_RESP_SLVERR) | (resp == AXI_RESP_DECERR);
   endfunction
 
   typedef enum logic [1:0] {
