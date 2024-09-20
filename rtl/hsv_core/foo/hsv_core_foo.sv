@@ -59,7 +59,7 @@ module hsv_core_foo
 
       .in(out),
       .ready_o(out_ready),
-      .valid_i(out_ready),
+      .valid_i(out_valid),
 
       .out(commit_data),
       .ready_i,
