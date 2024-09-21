@@ -85,30 +85,31 @@ void axi_queue::do_reads(F callback)
 	if (this->queue.empty())
 		return;
 
-	auto &front = this->queue.front();
-	if (front.completed)
+	auto &back = this->queue.back();
+	if (back.completed)
 		return;
 
-	auto *agent = callback(front.address);
+	auto *agent = callback(back.address);
 	if (!agent) {
-		front.error = true;
-		front.write_index = 1;
-		front.beats[0].data = 0xffffffff;
+		back.error = true;
+		back.write_index = 1;
+		back.expected_len = 1;
+		back.beats[0].data = 0xffffffff;
 	}
 
-	while (!front.error && front.write_index < front.expected_len)
-		if (front.write_index == axi_transaction::MAX_BURST)
-			front.error = true;
+	while (back.write_index < back.expected_len)
+		if (back.write_index == axi_transaction::MAX_BURST)
+			back.error = true;
 		else {
-			auto &beat = front.beats[front.write_index];
-			if (!agent->read(front.address, beat.data))
-				front.error = true;
+			auto &beat = back.beats[back.write_index];
+			if (!agent->read(back.address, beat.data))
+				back.error = true;
 
-			front.address += 4;
-			front.write_index++;
+			back.address += 4;
+			back.write_index++;
 		}
 
-	front.completed = true;
+	back.completed = true;
 }
 
 template<typename F>
@@ -117,24 +118,24 @@ void axi_queue::do_writes(F callback)
 	if (this->queue.empty())
 		return;
 
-	auto &front = this->queue.front();
-	if (!front.completed || front.read_index == front.write_index)
+	auto &back = this->queue.back();
+	if (!back.completed || back.read_index == back.write_index)
 		return;
 
-	auto *agent = callback(front.address);
+	auto *agent = callback(back.address);
 	if (!agent) {
-		front.error = true;
-		front.read_index = 0;
-		front.write_index = 0;
+		back.error = true;
+		back.read_index = 0;
+		back.write_index = 0;
 	}
 
-	while (!front.error && front.read_index < front.write_index) {
-		auto &beat = front.beats[front.read_index];
-		if (!agent->write(front.address, beat.data, beat.strobe))
-			front.error = true;
+	while (back.read_index < back.write_index) {
+		auto &beat = back.beats[back.read_index];
+		if (!agent->write(back.address, beat.data, beat.strobe))
+			back.error = true;
 
-		front.address += 4;
-		front.read_index++;
+		back.address += 4;
+		back.read_index++;
 	}
 }
 

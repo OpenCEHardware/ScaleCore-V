@@ -3,9 +3,9 @@
 
 namespace
 {
-	constexpr unsigned    AXI_RESP_OK     = 0b00;
-	constexpr unsigned    AXI_RESP_ERR    = 0b10;
-	constexpr std::size_t AXI_MAX_PENDING = 3;
+	constexpr unsigned char AXI_RESP_OK     = 0b00;
+	constexpr unsigned char AXI_RESP_ERR    = 0b10;
+	constexpr std::size_t   AXI_MAX_PENDING = 3;
 }
 
 void axi_queue::read_tx(
