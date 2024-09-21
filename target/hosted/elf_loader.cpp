@@ -13,14 +13,14 @@ elf_loader::elf_loader(simulation &sim, const char *path)
 {
 	int fd = ::open(path, O_RDONLY);
 	if (fd < 0) {
-		this->error = errno;
+		this->error_ = errno;
 		return;
 	}
 
 	off_t end_offset = ::lseek(fd, 0, SEEK_END);
 	if (end_offset < 0 || end_offset < sizeof(Elf32_Ehdr)) {
 		::close(fd);
-		this->error = errno;
+		this->error_ = errno;
 		return;
 	}
 
@@ -29,7 +29,7 @@ elf_loader::elf_loader(simulation &sim, const char *path)
 	void *elf_base = ::mmap(nullptr, elf_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
 	if (elf_base == MAP_FAILED) {
 		::close(fd);
-		this->error = errno;
+		this->error_ = errno;
 		return;
 	}
 
@@ -45,7 +45,7 @@ elf_loader::elf_loader(simulation &sim, const char *path)
 	 || header->e_type != ET_EXEC || header->e_machine != EM_RISCV || header->e_version != EV_CURRENT
 	 || header->e_phoff == 0 || header->e_phentsize < sizeof(Elf32_Phdr) || header->e_phnum == 0)
 	{
-		this->error = ENOEXEC;
+		this->error_ = ENOEXEC;
 		return;
 	}
 
@@ -67,7 +67,7 @@ elf_loader::elf_loader(simulation &sim, const char *path)
 		if (zero_size > 0) {
 			void *zeroed = ::mmap(nullptr, zero_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 			if (zeroed == MAP_FAILED) {
-				this->error = errno;
+				this->error_ = errno;
 				return;
 			}
 
@@ -75,6 +75,8 @@ elf_loader::elf_loader(simulation &sim, const char *path)
 			this->segments.push_back(memory_region{sim, base, zeroed, zero_size});
 		}
 	}
+
+	this->entrypoint_ = header->e_entry;
 }
 
 elf_loader::~elf_loader()

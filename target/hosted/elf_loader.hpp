@@ -13,9 +13,14 @@ class elf_loader
 
 		~elf_loader();
 
-		inline int get_errno() const noexcept
+		inline unsigned entrypoint() const noexcept
 		{
-			return this->error;
+			return this->entrypoint_;
+		}
+
+		inline int error() const noexcept
+		{
+			return this->error_;
 		}
 
 	private:
@@ -27,7 +32,8 @@ class elf_loader
 
 		std::vector<memory_region> segments;
 		std::vector<mapping>       mappings;
-		int                        error = 0;
+		unsigned                   entrypoint_;
+		int                        error_;
 };
 
 #endif
