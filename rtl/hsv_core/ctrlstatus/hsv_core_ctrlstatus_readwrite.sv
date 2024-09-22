@@ -131,6 +131,8 @@ module hsv_core_ctrlstatus_readwrite
     endcase
 
     unique case (1'b1)
+      cmd.syscall:     action = COMMIT_EXCEPTION;
+      cmd.breakpoint:  action = COMMIT_EXCEPTION;
       cmd.wait_irq:    action = COMMIT_WFI;
       cmd.mode_return: action = COMMIT_MODE_RET;
       default:         action = COMMIT_NEXT;

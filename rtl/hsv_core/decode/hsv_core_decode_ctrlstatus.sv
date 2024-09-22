@@ -56,6 +56,10 @@ module hsv_core_decode_ctrlstatus
         unique case (rv_funct12_op(
             insn
         ))
+          RvFunct12SystemPrivEcall: ctrlstatus_data.syscall = 1;
+
+          RvFunct12SystemPrivEbreak: ctrlstatus_data.breakpoint = 1;
+
           RvFunct12SystemPrivMret: begin
             ctrlstatus_data.mode_return = 1;
             if (current_mode != MACHINE_MODE) illegal = 1;

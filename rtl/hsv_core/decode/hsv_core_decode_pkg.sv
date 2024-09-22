@@ -86,6 +86,8 @@ package hsv_core_decode_pkg;
   typedef logic [11:0] rv_funct12;
 
   localparam rv_funct12 RvFunct12Any = 12'b???????_?????;
+  localparam rv_funct12 RvFunct12SystemPrivEcall = 12'b0000000_00000;
+  localparam rv_funct12 RvFunct12SystemPrivEbreak = 12'b0000000_00001;
   localparam rv_funct12 RvFunct12SystemPrivMret = 12'b0011000_00010;
   localparam rv_funct12 RvFunct12SystemPrivWfi = 12'b0001000_00101;
 

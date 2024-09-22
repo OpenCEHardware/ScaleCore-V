@@ -273,7 +273,9 @@ package hsv_core_pkg;
   typedef struct packed {
     logic             read;
     logic             write;
+    logic             syscall;
     logic             wait_irq;
+    logic             breakpoint;
     logic             write_flip;
     logic             write_mask;
     logic             mode_return;
