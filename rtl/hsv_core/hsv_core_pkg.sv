@@ -77,6 +77,8 @@ package hsv_core_pkg;
 
   // -------------- Exec-Mem common structs ---------------
 
+  typedef logic [RegAmount-1:1] reg_mask;
+
   typedef struct packed {
     insn_token token;
     word       pc;
@@ -84,6 +86,7 @@ package hsv_core_pkg;
     reg_addr   rs1_addr;
     reg_addr   rs2_addr;
     reg_addr   rd_addr;
+    reg_mask   rd_mask;
     word       rs1;
     word       rs2;
     word       immediate;
@@ -323,7 +326,6 @@ package hsv_core_pkg;
 
   // -------------- Issue typedefs --------------
 
-  typedef logic [RegAmount-1:1] reg_mask;
 
 
   // -------------- Issue enums -----------------
@@ -367,7 +369,6 @@ package hsv_core_pkg;
     logic             jump;
     logic             trap;
     logic             writeback;
-    reg_mask          rd_mask;
     logic [4:0]       trap_cause;  //Check size
     logic [31:0]      trap_value;  //Check size
     exec_mem_common_t common;

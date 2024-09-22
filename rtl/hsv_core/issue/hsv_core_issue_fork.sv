@@ -82,9 +82,13 @@ module hsv_core_issue_fork
     ctrlstatus_data.common.rs2 = rs2_data;
 
     exec_mem_common.pc = issue_data.common.pc;
-    exec_mem_common.pc_increment = issue_data.common.pc_increment;
-    exec_mem_common.immediate = issue_data.common.immediate;
     exec_mem_common.token = token;
+    exec_mem_common.rd_addr = issue_data.common.rd_addr;
+    exec_mem_common.rd_mask = rd_mask;
+    exec_mem_common.rs1_addr = issue_data.common.rs1_addr;
+    exec_mem_common.rs2_addr = issue_data.common.rs2_addr;
+    exec_mem_common.immediate = issue_data.common.immediate;
+    exec_mem_common.pc_increment = issue_data.common.pc_increment;
   end
 
   // issue_data_t data;

@@ -128,7 +128,7 @@ module hsv_core_commit
   assign wr_addr = used_data.common.rd_addr;
   assign wr_data = used_data.result;
   assign wr_en = used_data.writeback & !used_data.trap;
-  assign commit_mask = !used_data.trap ? used_data.rd_mask : '0;
+  assign commit_mask = !used_data.trap ? used_data.common.rd_mask : '0;
 
   logic token_enable;
   assign token_enable = !ctrl_begin_irq & general_commit & !used_data.trap;
