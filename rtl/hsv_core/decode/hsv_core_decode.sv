@@ -71,7 +71,7 @@ module hsv_core_decode
 
       .illegal (illegal_branch),
       .common_i(common),
-      .common_o(common_ctrlstatus)
+      .common_o(common_branch)
   );
 
   hsv_core_decode_ctrlstatus decode_ctrlstatus (
@@ -80,7 +80,7 @@ module hsv_core_decode
 
       .illegal (illegal_ctrlstatus),
       .common_i(common),
-      .common_o(common_branch)
+      .common_o(common_ctrlstatus)
   );
 
   hsv_core_decode_common decode_common (
