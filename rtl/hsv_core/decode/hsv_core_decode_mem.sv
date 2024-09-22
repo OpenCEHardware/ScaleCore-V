@@ -46,6 +46,8 @@ module hsv_core_decode_mem
 
       {RV_MAJOR_LOAD, RvFunct3LoadStoreHalfUnsigned} : mem_data.size = MEM_SIZE_HALF;
 
+      {RV_MAJOR_MISC_MEM, RvFunct3MiscMemFence} : mem_data.fence = 1;
+
       default: illegal = 1;
     endcase
 
@@ -61,6 +63,12 @@ module hsv_core_decode_mem
         common_o = common_i.s_type;
         mem_data.direction = MEM_DIRECTION_WRITE;
         mem_data.sign_extend = 'x;
+      end
+
+      RV_MAJOR_MISC_MEM: begin
+        common_o = common_i.i_type;
+        common_o.rd_addr = '0;
+        common_o.rs1_addr = '0;
       end
 
       default: illegal = 1;

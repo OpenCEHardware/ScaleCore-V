@@ -128,7 +128,7 @@ module hsv_core_decode
         exec_select.foo = 1;
       end
 
-      RV_MAJOR_LOAD, RV_MAJOR_STORE: begin
+      RV_MAJOR_LOAD, RV_MAJOR_STORE, RV_MAJOR_MISC_MEM: begin
         illegal = illegal_mem;
         common_final = common_mem;
         exec_select.mem = 1;

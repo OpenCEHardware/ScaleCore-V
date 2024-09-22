@@ -13,6 +13,8 @@ module hsv_core_mem_request
     input read_write_t request,
     input logic        valid_i,
 
+    input  logic       fence_ready,
+    output logic       fence_valid,
     input  mem_counter pending_reads,
     output logic       pending_reads_up,
     input  mem_counter pending_writes,
@@ -41,12 +43,13 @@ module hsv_core_mem_request
   assign is_write = request.mem_data.direction == MEM_DIRECTION_WRITE;
 
   assign request_stall = is_write ? write_stall : read_stall;
-  assign legal_transaction = valid_i & ~request.misaligned_address;
+  assign legal_transaction = valid_i & ~request.misaligned_address & ~request.mem_data.fence;
 
   assign pending_reads_up = legal_transaction & is_read & ~read_stall;
   assign pending_writes_up = legal_transaction & is_write & ~write_stall;
   assign write_balance_down = pending_writes_up & request.is_memory;
 
+  assign fence_valid = valid_i & request.mem_data.fence;
   assign commit_waits_for_me = request.mem_data.common.token == commit_token;
 
   always_comb begin
@@ -66,10 +69,6 @@ module hsv_core_mem_request
     // Reads cannot proceed unless all previous writes have completed
     if (pending_writes != '0) read_stall = 1;
 
-    // Illegal reads go through the request FIFO as well, but they are
-    // discarded and are never sent through dmem
-    if (request.misaligned_address) read_stall = 0;
-
     // Note: this is a signed comparison (counter may be negative)
     write_stall = write_balance <= mem_counter'(0);
 
@@ -85,9 +84,19 @@ module hsv_core_mem_request
     // Writes cannot proceed unless all previous reads have completed
     if (pending_reads != '0) write_stall = 1;
 
-    // Illegal writes go through the request FIFO as well, but they are
+    // Illegal reads/writes go through the request FIFO as well, but they are
     // discarded and are never sent through dmem
-    if (request.misaligned_address) write_stall = 0;
+    if (request.misaligned_address) begin
+      read_stall  = 0;
+      write_stall = 0;
+    end
+
+    // A memory fences makes the request unit to wait until the response unit
+    // has completed all previous memory transactions
+    if (request.mem_data.fence) begin
+      read_stall  = ~fence_ready;
+      write_stall = ~fence_ready;
+    end
   end
 
   always_ff @(posedge clk_core or negedge rst_core_n)

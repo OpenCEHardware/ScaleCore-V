@@ -11,9 +11,14 @@ module hsv_core_mem_response
     input read_write_t response,
     input logic        valid_i,
 
+    output logic fence_ready,
+    input  logic fence_valid,
     output logic pending_reads_down,
     output logic pending_writes_down,
     output logic write_balance_up,
+
+    input mem_counter pending_reads,
+    input mem_counter pending_writes,
 
     input  logic      dmem_r_valid,
     input  word       dmem_r_data,
@@ -24,16 +29,17 @@ module hsv_core_mem_response
     input  axi_resp_t dmem_b_resp,
     output logic      dmem_b_ready,
 
-    input logic commit_mem,
-
     output commit_data_t out,
-    output logic         valid_o
+    output logic         valid_o,
+
+    input logic commit_mem
 );
 
   word extend_mask, read_data;
   logic completed, error, is_read, is_write, misaligned, sign_bit;
   logic [1:0] read_shift;
   exception_t exception_cause;
+  commit_action_t action;
 
   logic writes_to_commit_up, writes_to_commit_down;
   logic discard_responses_up, discard_responses_down;
@@ -95,17 +101,24 @@ module hsv_core_mem_response
 
     if (is_read) begin
       // Commit reads as soon as the read response is available
-      completed = dmem_r_valid;
       error = is_axi_error(dmem_r_resp);
+      completed = dmem_r_valid;
     end else if (response.is_memory) begin
       // Commit memory writes as soon as possible
       // FIXME: Memory write errors are silently ignored!
-      completed = 1;
       error = 0;
+      completed = 1;
     end else begin
       // Commit I/O writes as soon as the write response is available
-      completed = dmem_b_valid & (discard_responses == '0);
       error = is_axi_error(dmem_b_resp);
+      completed = dmem_b_valid & (discard_responses == '0);
+    end
+
+    fence_ready = 0;
+    if (response.mem_data.fence) begin
+      error = 0;
+      completed = fence_valid & (pending_reads == '0) & (pending_writes == '0);
+      fence_ready = completed & ~commit_stall;
     end
 
     if (~valid_i) completed = 0;
@@ -145,13 +158,18 @@ module hsv_core_mem_response
 
     if (is_read) exception_cause = misaligned ? EXC_LOAD_ADDRESS_MISALIGNED : EXC_LOAD_ACCESS_FAULT;
     else exception_cause = misaligned ? EXC_STORE_ADDRESS_MISALIGNED : EXC_STORE_ACCESS_FAULT;
+
+    if (error | misaligned) action = COMMIT_EXCEPTION;
+    else action = COMMIT_NEXT;
+
+    if (response.mem_data.fence) action = COMMIT_NEXT;
   end
 
   always_ff @(posedge clk_core) begin
     if (~commit_stall) begin
       valid_o <= completed;
 
-      out.action <= (error | misaligned) ? COMMIT_EXCEPTION : COMMIT_NEXT;
+      out.action <= action;
       out.common <= response.mem_data.common;
       out.result <= read_data;
       out.next_pc <= response.mem_data.common.pc_increment;

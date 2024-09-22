@@ -289,6 +289,7 @@ package hsv_core_pkg;
   // -- Memory --
 
   typedef struct packed {
+    logic             fence;
     mem_direction_t   direction;
     mem_size_t        size;
     logic             sign_extend;  // lbu/lhu vs lb/lh

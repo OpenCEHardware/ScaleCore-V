@@ -76,6 +76,8 @@ package hsv_core_decode_pkg;
   localparam rv_funct3 RvFunct3SystemCsrrsi = 3'b110;
   localparam rv_funct3 RvFunct3SystemCsrrci = 3'b111;
 
+  localparam rv_funct3 RvFunct3MiscMemFence = 3'b000;
+
   typedef logic [6:0] rv_funct7;
 
   localparam rv_funct7 RvFunct7Any = 7'b???????;

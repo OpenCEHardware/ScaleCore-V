@@ -81,12 +81,14 @@ module hsv_core_mem
   logic write_balance_up, write_balance_down;
   mem_counter pending_reads, pending_writes, write_balance;
 
+  logic fence_ready, fence_valid;
+
   logic commit_stall, out_ready, out_valid;
   commit_data_t out_response;
 
   assign commit_stall = ~out_ready;
 
-  // Flush occurs after all pending reads and writes have completed
+  // A requested flush can proceed once all pending reads and writes have completed
   logic flush, can_flush;
   assign can_flush = (pending_reads == '0) & (pending_writes == '0) & (write_balance == '0);
 
@@ -148,6 +150,8 @@ module hsv_core_mem
       .request(request_fifo_out),
       .valid_i(request_fifo_out_valid),
 
+      .fence_ready,
+      .fence_valid,
       .pending_reads,
       .pending_reads_up,
       .pending_writes,
@@ -197,9 +201,14 @@ module hsv_core_mem
       .response(response_fifo_out),
       .valid_i (response_fifo_out_valid),
 
+      .fence_ready,
+      .fence_valid,
       .pending_reads_down,
       .pending_writes_down,
       .write_balance_up,
+
+      .pending_reads,
+      .pending_writes,
 
       .dmem_r_valid(dmem.rvalid),
       .dmem_r_data (dmem.rdata),
@@ -211,9 +220,9 @@ module hsv_core_mem
       .dmem_b_ready(dmem.bready),
 
       .commit_mem,
+      .valid_o(out_valid),
 
-      .out(out_response),
-      .valid_o(out_valid)
+      .out(out_response)
   );
 
   hs_skid_buffer #(
