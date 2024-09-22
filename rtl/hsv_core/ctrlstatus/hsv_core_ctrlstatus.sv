@@ -27,16 +27,16 @@ module hsv_core_ctrlstatus
     output logic         valid_o,
     output commit_data_t commit_data,
 
-    input  insn_token       commit_token,
-    input  logic            ctrl_flush_begin,
-    input  logic            ctrl_trap,
-    input  logic      [4:0] ctrl_trap_cause,
-    input  word             ctrl_trap_value,
-    input  logic            ctrl_mode_return,
-    input  word             ctrl_next_pc,
-    input  logic            ctrl_commit,
-    output logic            ctrl_wait_irq,
-    output logic            ctrl_begin_irq,
+    input  insn_token  commit_token,
+    input  logic       ctrl_flush_begin,
+    input  logic       ctrl_trap,
+    input  exception_t ctrl_trap_cause,
+    input  word        ctrl_trap_value,
+    input  logic       ctrl_mode_return,
+    input  word        ctrl_next_pc,
+    input  logic       ctrl_commit,
+    output logic       ctrl_wait_irq,
+    output logic       ctrl_begin_irq,
 
     output privilege_t current_mode
 );

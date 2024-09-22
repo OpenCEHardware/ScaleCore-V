@@ -154,7 +154,8 @@ module hsv_core_decode
 
     alu_data_or_trap = alu_data;
     alu_data_or_trap.illegal = 0;
-    //TODO: alu_data_or_trap.fetch_fault = fetch_data.fault;
+    alu_data_or_trap.fetch_fault = fetch_data.fault;
+    alu_data_or_trap.illegal_insn = fetch_data.insn;
 
     // Illegal opcodes are "executed" by ALU and later handled by commit
     if (fetch_data.fault | illegal) begin

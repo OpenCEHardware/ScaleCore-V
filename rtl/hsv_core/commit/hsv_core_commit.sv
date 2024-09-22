@@ -40,7 +40,7 @@ module hsv_core_commit
 
     output logic       ctrl_flush_begin,
     output logic       ctrl_trap,
-    output logic [4:0] ctrl_trap_cause,
+    output exception_t ctrl_trap_cause,
     output word        ctrl_trap_value,
     output logic       ctrl_mode_return,
     output word        ctrl_next_pc,
@@ -143,8 +143,8 @@ module hsv_core_commit
 
     ctrl_trap <= action.trap;
     ctrl_wait_irq <= action.wait_irq;
-    ctrl_trap_cause <= used_data.trap_cause;
-    ctrl_trap_value <= used_data.trap_value;
+    ctrl_trap_cause <= used_data.exception_cause;
+    ctrl_trap_value <= used_data.exception_value;
     ctrl_mode_return <= action.mode_return;
 
     if (!action.trap) ctrl_next_pc <= used_data.next_pc;

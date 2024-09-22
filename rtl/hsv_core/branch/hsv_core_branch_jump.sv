@@ -39,6 +39,8 @@ module hsv_core_branch_jump
       out.result <= in_branch_data.common.pc_increment;
       out.next_pc <= final_pc;
       out.writeback <= in_branch_data.link;
+      out.exception_cause <= EXC_INSTRUCTION_ADDRESS_MISALIGNED;
+      out.exception_value <= in_target;
     end
 
     if (flush_req) valid_o <= 0;

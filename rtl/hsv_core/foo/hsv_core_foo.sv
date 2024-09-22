@@ -97,7 +97,7 @@ module hsv_core_foo
       // COMMIT_EXCEPTION: Instruction triggered an exception; flush the
       //                   pipeline, switch to M-mode and jump to the M-mode
       //                   trap handler. In this case, you also need to set
-      //                   trap_cause and trap_value accordingly (see docs for
+      //                   exception_cause/value accordingly (see docs for
       //                   the 'mcause' and 'mtval' RISC-V CSRs).
       //
       // COMMIT_WFI:       Halt the core and wait for an interrupt. The
@@ -121,10 +121,19 @@ module hsv_core_foo
       out.result <= 32'hdeadc0de;
       out.writeback <= 0;
 
-      // "What will be the address of the next instruction?"
+      // "What is the address of the following instruction?"
       //
       // Do not change this unless your foo unit can perform branches or jumps
       out.next_pc <= foo_data.common.pc_increment;
+
+      // "What caused this instruction to fault?"
+      //
+      // Only relevant if action == COMMIT_EXCEPTION, ignored otherwise.
+      out.exception_cause <= EXC_HARDWARE_ERROR;
+
+      // Optional exception metadata. Depends on exception_cause. See the mtval
+      // rules found in the privileged RISC-V spec. If unsure, leave as zero.
+      out.exception_value <= '0;
     end
 
     if (flush) begin

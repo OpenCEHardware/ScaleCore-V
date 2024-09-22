@@ -47,15 +47,17 @@ module hsv_core_ctrlstatus_readwrite
   logic read_done, read_error, write_done, write_error;
   state_t state, next_state;
   csr_num_t csr_num;
+  exception_t exception_cause;
   commit_action_t action;
   ctrlstatus_data_t cmd;
 
-  //TODO: trap_cause, trap_value
   assign out.action = action;
   assign out.common = cmd.common;
   assign out.result = read_data;
   assign out.next_pc = cmd.common.pc_increment;
   assign out.writeback = do_read;
+  assign out.exception_cause = exception_cause;
+  assign out.exception_value = '0;
 
   assign regs_addr = {csr_num, 4'b0000};
 
@@ -130,12 +132,29 @@ module hsv_core_ctrlstatus_readwrite
       default: ;
     endcase
 
+    exception_cause = exception_t'('x);
+
     unique case (1'b1)
-      cmd.syscall:     action = COMMIT_EXCEPTION;
-      cmd.breakpoint:  action = COMMIT_EXCEPTION;
+      cmd.syscall: begin
+        action = COMMIT_EXCEPTION;
+
+        unique case (current_mode)
+          MACHINE_MODE: exception_cause = EXC_ECALL_FROM_M_MODE;
+          USER_MODE:    exception_cause = EXC_ECALL_FROM_U_MODE;
+
+          default: ;
+        endcase
+      end
+
+      cmd.breakpoint: begin
+        action = COMMIT_EXCEPTION;
+        exception_cause = EXC_BREAKPOINT;
+      end
+
       cmd.wait_irq:    action = COMMIT_WFI;
       cmd.mode_return: action = COMMIT_MODE_RET;
-      default:         action = COMMIT_NEXT;
+
+      default: action = COMMIT_NEXT;
     endcase
 
     if (illegal | read_error | write_error) action = COMMIT_EXCEPTION;

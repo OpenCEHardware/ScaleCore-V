@@ -21,6 +21,9 @@ module hsv_core_alu_shift_add
   word adder_q, alu_q, shift_q, shift_discarded;
   logic adder_carry;
 
+  word exception_value;
+  exception_t exception_cause;
+
   // All three types of shifts (sll, slr, sra) are implemented using a single
   // right shifter. The shifter takes a 64-bit input (32-bit high + 32-bit low).
   //
@@ -59,26 +62,27 @@ module hsv_core_alu_shift_add
       ALU_OUT_SHIFT: alu_q = shift_q;
       default:       alu_q = 'x;
     endcase
+
+    if (in_alu_data.fetch_fault) begin
+      exception_cause = EXC_INSTRUCTION_ACCESS_FAULT;
+      exception_value = in_alu_data.common.pc;
+    end else begin
+      exception_cause = EXC_ILLEGAL_INSTRUCTION;
+      exception_value = in_alu_data.illegal_insn;
+    end
   end
-
-  word out_next_pc, out_result;
-  logic out_illegal;
-  exec_mem_common_t out_common;
-
-  assign out.action = out_illegal ? COMMIT_EXCEPTION : COMMIT_NEXT;
-  assign out.common = out_common;
-  assign out.result = out_result;
-  assign out.next_pc = out_next_pc;
-  assign out.writeback = 1;
 
   always_ff @(posedge clk_core) begin
     if (~stall) begin
       valid_o <= valid_i;
 
-      out_common <= in_alu_data.common;
-      out_result <= alu_q;
-      out_illegal <= in_alu_data.illegal;
-      out_next_pc <= in_alu_data.common.pc_increment;
+      out.action <= in_alu_data.illegal ? COMMIT_EXCEPTION : COMMIT_NEXT;
+      out.common <= in_alu_data.common;
+      out.result <= alu_q;
+      out.next_pc <= in_alu_data.common.pc_increment;
+      out.writeback <= 1;
+      out.exception_cause <= exception_cause;
+      out.exception_value <= exception_value;
     end
 
     if (flush_req) valid_o <= 0;

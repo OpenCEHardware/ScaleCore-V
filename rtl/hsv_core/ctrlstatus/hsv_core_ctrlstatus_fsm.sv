@@ -12,7 +12,7 @@ module hsv_core_ctrlstatus_fsm
 
     input  logic       ctrl_flush_begin,
     input  logic       ctrl_trap,
-    input  logic [4:0] ctrl_trap_cause,
+    input  exception_t ctrl_trap_cause,
     input  word        ctrl_trap_value,
     input  logic       ctrl_mode_return,
     input  word        ctrl_next_pc,

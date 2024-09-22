@@ -19,11 +19,10 @@ module hsv_core_mem_address
   localparam int AddrSubhalfBits = AddrSubwordBits - 1;
 
   word address, write_data, write_data_word;
-  logic unaligned_address;
+  logic misaligned_address;
   logic [3:0] write_strobe;
   logic [7:0] write_data_byte;
   logic [15:0] write_data_half;
-  logic [AddrSubwordBits - 1:0] read_shift;
 
   assign write_data_byte = write_data_word[$bits(write_data_byte)-1:0];
   assign write_data_half = write_data_word[$bits(write_data_half)-1:0];
@@ -49,7 +48,7 @@ module hsv_core_mem_address
     // lhu/lbu).
     //
     // In both cases, the lower address bits select the correct shifts
-    // and/or masks. We also need to raise traps if an unaligned access is
+    // and/or masks. We also need to raise traps if an misaligned access is
     // attempted, and this is also done by checking the lower bits.
     //
     // For words (datum 'x' is 32 bits wide):
@@ -76,7 +75,7 @@ module hsv_core_mem_address
       MEM_SIZE_WORD: begin
         write_data = write_data_word;
         write_strobe = 4'b1111;
-        unaligned_address = address[AddrSubwordBits-1:0] != '0;
+        misaligned_address = address[AddrSubwordBits-1:0] != '0;
       end
 
       MEM_SIZE_HALF: begin
@@ -88,7 +87,7 @@ module hsv_core_mem_address
           default: write_strobe = 'x;
         endcase
 
-        unaligned_address = address[AddrSubhalfBits-1:0] != '0;
+        misaligned_address = address[AddrSubhalfBits-1:0] != '0;
       end
 
       MEM_SIZE_BYTE: begin
@@ -102,20 +101,15 @@ module hsv_core_mem_address
           default: write_strobe = 'x;
         endcase
 
-        unaligned_address = 1'b0;
+        misaligned_address = 1'b0;
       end
 
       default: begin
         write_data = 'x;
         write_strobe = 'x;
-        unaligned_address = 'x;
+        misaligned_address = 'x;
       end
     endcase
-
-    // Read results are right-shifted during the response stage in
-    // accordance with the position of the requested byte or half-word
-    // within the read word. Note that this is a numer of bytes, not bits.
-    read_shift = address[AddrSubwordBits-1:0];
 
     // Finally, zero-out the lower bits as we don't need them anymore. This
     // `address` has now become the actual address the CPU core will send
@@ -132,10 +126,9 @@ module hsv_core_mem_address
       transaction.address <= address;
       transaction.mem_data <= mem_data;
       transaction.is_memory <= address_is_memory(address);
-      transaction.read_shift <= read_shift;
       transaction.write_data <= write_data;
       transaction.write_strobe <= write_strobe;
-      transaction.unaligned_address <= unaligned_address;
+      transaction.misaligned_address <= misaligned_address;
     end
 
     if (flush) begin

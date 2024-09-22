@@ -31,7 +31,9 @@ module hsv_core_mem_response
 );
 
   word extend_mask, read_data;
-  logic completed, error, is_read, is_write, sign_bit;
+  logic completed, error, is_read, is_write, misaligned, sign_bit;
+  logic [1:0] read_shift;
+  exception_t exception_cause;
 
   logic writes_to_commit_up, writes_to_commit_down;
   logic discard_responses_up, discard_responses_down;
@@ -39,6 +41,7 @@ module hsv_core_mem_response
 
   assign is_read = ~is_write;
   assign is_write = response.mem_data.direction == MEM_DIRECTION_WRITE;
+  assign misaligned = response.misaligned_address;
 
   assign write_balance_up = commit_mem & (writes_to_commit != '0);
   assign pending_reads_down = dmem_r_ready & dmem_r_valid;
@@ -51,6 +54,8 @@ module hsv_core_mem_response
   assign discard_responses_down = pending_writes_down;
 
   assign response_stall = commit_stall | ~completed;
+
+  assign read_shift = response.address[$bits(read_shift)-1:0];
 
   hsv_core_mem_counter writes_to_commit_counter (
       .clk_core,
@@ -78,9 +83,9 @@ module hsv_core_mem_response
     dmem_r_ready = is_read;
     dmem_b_ready = is_write;
 
-    // The request module never executes unaligned address operations,
+    // The request module never executes misaligned address operations,
     // they are pushed on until they reach here and an exception is committed
-    if (~valid_i | commit_stall | response.unaligned_address) begin
+    if (~valid_i | commit_stall | misaligned) begin
       dmem_r_ready = 0;
       dmem_b_ready = 0;
     end
@@ -106,7 +111,7 @@ module hsv_core_mem_response
     if (~valid_i) completed = 0;
 
     // Shift by 0, 8, 16 or 24 bits to retrieve the addressed subword
-    read_data = dmem_r_data >> (8 * response.read_shift);
+    read_data = dmem_r_data >> (5'd8 * 5'(read_shift));
 
     unique case (response.mem_data.size)
       MEM_SIZE_WORD: begin
@@ -137,17 +142,22 @@ module hsv_core_mem_response
     // E.g. a byte load (lb) sets bits [31:8] to all-ones or all-zeros.
     if (response.mem_data.sign_extend & sign_bit) read_data |= extend_mask;
     else read_data &= ~extend_mask;
+
+    if (is_read) exception_cause = misaligned ? EXC_LOAD_ADDRESS_MISALIGNED : EXC_LOAD_ACCESS_FAULT;
+    else exception_cause = misaligned ? EXC_STORE_ADDRESS_MISALIGNED : EXC_STORE_ACCESS_FAULT;
   end
 
   always_ff @(posedge clk_core) begin
     if (~commit_stall) begin
       valid_o <= completed;
 
-      out.action <= (error | response.unaligned_address) ? COMMIT_EXCEPTION : COMMIT_NEXT;
+      out.action <= (error | misaligned) ? COMMIT_EXCEPTION : COMMIT_NEXT;
       out.common <= response.mem_data.common;
       out.result <= read_data;
       out.next_pc <= response.mem_data.common.pc_increment;
       out.writeback <= is_read;
+      out.exception_cause <= exception_cause;
+      out.exception_value <= response.address;
     end
 
     if (flush) valid_o <= 0;

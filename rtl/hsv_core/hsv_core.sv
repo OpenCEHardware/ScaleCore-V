@@ -54,7 +54,7 @@ module hsv_core
 
   word ctrl_next_pc, ctrl_trap_value;
   logic ctrl_begin_irq, ctrl_commit, ctrl_flush_begin, ctrl_mode_return, ctrl_trap, ctrl_wait_irq;
-  logic [4:0] ctrl_trap_cause;
+  exception_t ctrl_trap_cause;
   privilege_t current_mode;
 
   word regfile_rs1_data, regfile_rs2_data, regfile_wr_data;

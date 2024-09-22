@@ -243,6 +243,8 @@ package hsv_core_pkg;
     //
     // Note that real ALU instructions will have `illegal = 0`.
     logic illegal;
+    logic fetch_fault;
+    word  illegal_insn;
 
     logic             negate;
     logic             flip_signs;
@@ -298,9 +300,8 @@ package hsv_core_pkg;
     word        address;
     word        write_data;
     logic [3:0] write_strobe;
-    logic       is_memory;          // See address_is_memory() above
-    logic       unaligned_address;
-    logic [1:0] read_shift;         // Subword address bits, used for correcting read results
+    logic       is_memory;           // See address_is_memory() above
+    logic       misaligned_address;
   } read_write_t;
 
   // -- Foo --
@@ -384,6 +385,23 @@ commit_action_bits_t
     COMMIT_WFI       = 4'b1001
   } commit_action_t;
 
+  // See official docs for the 'mcause' CSR
+  typedef enum logic [5:0] {
+    EXC_INSTRUCTION_ADDRESS_MISALIGNED = 6'd0,
+    EXC_INSTRUCTION_ACCESS_FAULT       = 6'd1,
+    EXC_ILLEGAL_INSTRUCTION            = 6'd2,
+    EXC_BREAKPOINT                     = 6'd3,
+    EXC_LOAD_ADDRESS_MISALIGNED        = 6'd4,
+    EXC_LOAD_ACCESS_FAULT              = 6'd5,
+    EXC_STORE_ADDRESS_MISALIGNED       = 6'd6,
+    EXC_STORE_ACCESS_FAULT             = 6'd7,
+    EXC_ECALL_FROM_U_MODE              = 6'd8,
+    EXC_ECALL_FROM_M_MODE              = 6'd11,
+    EXC_HARDWARE_ERROR                 = 6'd19,
+    EXC_CUSTOM_[24: 31]                        = 6'd24,
+    EXC_CUSTOM_[48: 63]                        = 6'd48
+  } exception_t;
+
   typedef struct packed {
     commit_action_t   action;
     word              next_pc;
@@ -391,8 +409,8 @@ commit_action_bits_t
     logic             jump;
     logic             trap;
     logic             writeback;
-    logic [4:0]       trap_cause;  //Check size
-    logic [31:0]      trap_value;  //Check size
+    exception_t       exception_cause;
+    logic [31:0]      exception_value;
     exec_mem_common_t common;
   } commit_data_t;
 

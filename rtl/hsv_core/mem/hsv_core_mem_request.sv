@@ -41,7 +41,7 @@ module hsv_core_mem_request
   assign is_write = request.mem_data.direction == MEM_DIRECTION_WRITE;
 
   assign request_stall = is_write ? write_stall : read_stall;
-  assign legal_transaction = valid_i & ~request.unaligned_address;
+  assign legal_transaction = valid_i & ~request.misaligned_address;
 
   assign pending_reads_up = legal_transaction & is_read & ~read_stall;
   assign pending_writes_up = legal_transaction & is_write & ~write_stall;
@@ -68,7 +68,7 @@ module hsv_core_mem_request
 
     // Illegal reads go through the request FIFO as well, but they are
     // discarded and are never sent through dmem
-    if (request.unaligned_address) read_stall = 0;
+    if (request.misaligned_address) read_stall = 0;
 
     // Note: this is a signed comparison (counter may be negative)
     write_stall = write_balance <= mem_counter'(0);
@@ -87,7 +87,7 @@ module hsv_core_mem_request
 
     // Illegal writes go through the request FIFO as well, but they are
     // discarded and are never sent through dmem
-    if (request.unaligned_address) write_stall = 0;
+    if (request.misaligned_address) write_stall = 0;
   end
 
   always_ff @(posedge clk_core or negedge rst_core_n)
