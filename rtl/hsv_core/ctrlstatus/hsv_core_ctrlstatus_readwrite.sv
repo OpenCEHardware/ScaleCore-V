@@ -42,7 +42,7 @@ module hsv_core_ctrlstatus_readwrite
   } state_t;
 
   word read_data, write_data, write_mask;
-  logic check, do_read, do_write;
+  logic can_flush, check, do_read, do_write;
   logic illegal, read_permitted, write_permitted, valid_access;
   logic read_done, read_error, write_done, write_error;
   state_t state, next_state;
@@ -84,6 +84,7 @@ module hsv_core_ctrlstatus_readwrite
     check = 0;
     ready_o = 0;
     valid_o = 0;
+    can_flush = 0;
 
     regs_req = 0;
     regs_req_is_wr = 0;
@@ -92,14 +93,18 @@ module hsv_core_ctrlstatus_readwrite
 
     unique case (state)
       ACCEPT: begin
-        ready_o = 1;
-        if (ready_o & valid_i) next_state = CHECK;
+        ready_o   = 1;
+        can_flush = 1;
+
+        if (ready_o & valid_i & ~flush_req) next_state = CHECK;
       end
 
       CHECK: begin
         check = 1;
+        can_flush = 1;
 
         if (commit_token == cmd.common.token) next_state = CSR_READ;
+        if (flush_req) next_state = ACCEPT;
       end
 
       CSR_READ: begin
@@ -163,7 +168,7 @@ module hsv_core_ctrlstatus_readwrite
       flush_ack <= 1;
     end else begin
       state <= next_state;
-      if (ready_o & ~valid_i) flush_ack <= flush_req;
+      if (can_flush) flush_ack <= flush_req;
     end
 
 endmodule
