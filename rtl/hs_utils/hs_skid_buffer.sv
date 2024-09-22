@@ -20,7 +20,7 @@ module hs_skid_buffer #(
 
   assign out = ready_o ? in : skid_buf;
   assign ready_o = was_ready | ~was_valid;
-  assign valid_o = valid_i | ~ready_o;
+  assign valid_o = (valid_i | ~ready_o) & ~flush;
 
   always_ff @(posedge clk_core) begin
     was_ready <= ready_i;
