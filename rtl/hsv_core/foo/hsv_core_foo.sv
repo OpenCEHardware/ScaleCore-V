@@ -86,13 +86,29 @@ module hsv_core_foo
 
       // Commit signals
 
-      // "Does this instruction change control flow?"
-      // E.g. a taken conditional branch
-      out.jump <= 0;
-
-      // "Does this instruction raise an exception?"
-      // E.g. illegal instruction, misaligned address
-      out.trap <= 0;
+      // "How does this instruction affect control flow?"
+      //
+      // COMMIT_NEXT:      Continue with the next instruction in the pipeline.
+      //                   Set pc_next to common.pc_increment in this case.
+      //
+      // COMMIT_JUMP:      Flush the pipeline and jump somewhere else (next_pc)
+      //                   Set pc_next to the branch target.
+      //
+      // COMMIT_EXCEPTION: Instruction triggered an exception; flush the
+      //                   pipeline, switch to M-mode and jump to the M-mode
+      //                   trap handler. In this case, you also need to set
+      //                   trap_cause and trap_value accordingly (see docs for
+      //                   the 'mcause' and 'mtval' RISC-V CSRs).
+      //
+      // COMMIT_WFI:       Halt the core and wait for an interrupt. The
+      //                   instruction immediately after this one will be
+      //                   interrupted.
+      //
+      // COMMIT_MODE_RET:  Return from privileged mode (MRET/SRET, i.e. end of trap).
+      //
+      // Most instructions set COMMIT_NEXT here. Instructions that can fail
+      // for any reason will conditionally set action to COMMIT_EXCEPTION.
+      out.action <= COMMIT_NEXT;
 
       // Carry on common information found in all instructions. This line
       // should never be removed or altered under any circumstances

@@ -232,7 +232,7 @@ addrmap hsv_core_ctrlstatus_regs
         desc = "Address of the instruction that was interrupted or that encountered the exception";
 
         field {
-            hw = w;
+            hw = rw;
             sw = rw;
             we;
         } PC[31:2]; // Note: supporting the 'C' extension would entail changing this to 31:1

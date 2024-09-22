@@ -68,6 +68,7 @@ package hsv_core_decode_pkg;
   localparam rv_funct3 RvFunct3BranchBltu = 3'b110;
   localparam rv_funct3 RvFunct3BranchBgeu = 3'b111;
 
+  localparam rv_funct3 RvFunct3SystemPriv = 3'b000;
   localparam rv_funct3 RvFunct3SystemCsrrw = 3'b001;
   localparam rv_funct3 RvFunct3SystemCsrrs = 3'b010;
   localparam rv_funct3 RvFunct3SystemCsrrc = 3'b011;
@@ -82,6 +83,12 @@ package hsv_core_decode_pkg;
 
   localparam rv_funct7 RvFunct7OpSubSra = 7'b0100000;
 
+  typedef logic [11:0] rv_funct12;
+
+  localparam rv_funct12 RvFunct12Any = 12'b???????_?????;
+  localparam rv_funct12 RvFunct12SystemPrivMret = 12'b0011000_00010;
+  localparam rv_funct12 RvFunct12SystemPrivWfi = 12'b0001000_00101;
+
   function automatic rv_major_opcode_t rv_major_op(word insn);
     return rv_major_opcode_t'(insn[6:0]);
   endfunction
@@ -92,6 +99,10 @@ package hsv_core_decode_pkg;
 
   function automatic rv_funct7 rv_funct7_op(word insn);
     return insn[31:25];
+  endfunction
+
+  function automatic rv_funct12 rv_funct12_op(word insn);
+    return insn[31:20];
   endfunction
 
   function automatic reg_addr rv_rd(word insn);

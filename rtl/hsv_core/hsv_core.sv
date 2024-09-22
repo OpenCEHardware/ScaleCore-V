@@ -53,8 +53,9 @@ module hsv_core
   insn_token commit_token;
 
   word ctrl_next_pc, ctrl_trap_value;
-  logic ctrl_flush_begin, ctrl_trap, ctrl_commit, ctrl_begin_irq;
+  logic ctrl_begin_irq, ctrl_commit, ctrl_flush_begin, ctrl_mode_return, ctrl_trap, ctrl_wait_irq;
   logic [4:0] ctrl_trap_cause;
+  privilege_t current_mode;
 
   word regfile_rs1_data, regfile_rs2_data, regfile_wr_data;
   logic regfile_wr_en;
@@ -90,7 +91,9 @@ module hsv_core
 
       .issue_data,
       .ready_i(issue_ready),
-      .valid_o(decode_valid)
+      .valid_o(decode_valid),
+
+      .current_mode
   );
 
   hsv_core_issue issue (
@@ -233,9 +236,13 @@ module hsv_core
       .ctrl_trap,
       .ctrl_trap_cause,
       .ctrl_trap_value,
+      .ctrl_mode_return,
       .ctrl_next_pc,
       .ctrl_commit,
-      .ctrl_begin_irq
+      .ctrl_wait_irq,
+      .ctrl_begin_irq,
+
+      .current_mode
   );
 
   hsv_core_commit commit (
@@ -276,8 +283,10 @@ module hsv_core
       .ctrl_trap,
       .ctrl_trap_cause,
       .ctrl_trap_value,
+      .ctrl_mode_return,
       .ctrl_next_pc,
       .ctrl_commit,
+      .ctrl_wait_irq,
       .ctrl_begin_irq,
 
       .wr_en  (regfile_wr_en),

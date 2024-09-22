@@ -143,8 +143,7 @@ module hsv_core_mem_response
     if (~commit_stall) begin
       valid_o <= completed;
 
-      out.jump <= 0;
-      out.trap <= error | response.unaligned_address;
+      out.action <= (error | response.unaligned_address) ? COMMIT_EXCEPTION : COMMIT_NEXT;
       out.common <= response.mem_data.common;
       out.result <= read_data;
       out.next_pc <= response.mem_data.common.pc_increment;

@@ -19,22 +19,26 @@ module hsv_core_ctrlstatus
     input  logic flush_ack_branch,
     input  logic flush_ack_commit,
 
-    input ctrlstatus_data_t ctrlstatus_data,
-    output logic ready_o,
-    input logic valid_i,
+    output logic             ready_o,
+    input  logic             valid_i,
+    input  ctrlstatus_data_t ctrlstatus_data,
 
+    input  logic         ready_i,
+    output logic         valid_o,
     output commit_data_t commit_data,
-    input logic ready_i,
-    output logic valid_o,
 
     input  insn_token       commit_token,
     input  logic            ctrl_flush_begin,
     input  logic            ctrl_trap,
     input  logic      [4:0] ctrl_trap_cause,
     input  word             ctrl_trap_value,
+    input  logic            ctrl_mode_return,
     input  word             ctrl_next_pc,
     input  logic            ctrl_commit,
-    output logic            ctrl_begin_irq
+    output logic            ctrl_wait_irq,
+    output logic            ctrl_begin_irq,
+
+    output privilege_t current_mode
 );
 
   // Increase this if you add another flush_ack_* signal
@@ -42,8 +46,6 @@ module hsv_core_ctrlstatus
 
   logic flush_ack, flush_ack_falling, flush_ack_raising;
   logic [NumOfFlushAcks - 1:0] flush_acks;
-
-  privilege_t current_mode;
 
   logic flush_ack_ctrlstatus, out_ready, out_valid;
   commit_data_t out;
@@ -105,8 +107,10 @@ module hsv_core_ctrlstatus
       .ctrl_trap,
       .ctrl_trap_cause,
       .ctrl_trap_value,
+      .ctrl_mode_return,
       .ctrl_next_pc,
       .ctrl_commit,
+      .ctrl_wait_irq,
       .ctrl_begin_irq,
 
       .regs_i(regs_out),

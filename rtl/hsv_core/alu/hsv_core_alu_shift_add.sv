@@ -65,8 +65,7 @@ module hsv_core_alu_shift_add
   logic out_illegal;
   exec_mem_common_t out_common;
 
-  assign out.jump = 0;
-  assign out.trap = out_illegal;
+  assign out.action = out_illegal ? COMMIT_EXCEPTION : COMMIT_NEXT;
   assign out.common = out_common;
   assign out.result = out_result;
   assign out.next_pc = out_next_pc;

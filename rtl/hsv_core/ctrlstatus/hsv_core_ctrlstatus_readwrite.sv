@@ -47,11 +47,11 @@ module hsv_core_ctrlstatus_readwrite
   logic read_done, read_error, write_done, write_error;
   state_t state, next_state;
   csr_num_t csr_num;
+  commit_action_t action;
   ctrlstatus_data_t cmd;
 
   //TODO: trap_cause, trap_value
-  assign out.jump = 0;
-  assign out.trap = illegal | read_error | write_error;
+  assign out.action = action;
   assign out.common = cmd.common;
   assign out.result = read_data;
   assign out.next_pc = cmd.common.pc_increment;
@@ -129,6 +129,14 @@ module hsv_core_ctrlstatus_readwrite
 
       default: ;
     endcase
+
+    unique case (1'b1)
+      cmd.wait_irq:    action = COMMIT_WFI;
+      cmd.mode_return: action = COMMIT_MODE_RET;
+      default:         action = COMMIT_NEXT;
+    endcase
+
+    if (illegal | read_error | write_error) action = COMMIT_EXCEPTION;
   end
 
   always_ff @(posedge clk_core) begin

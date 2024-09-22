@@ -273,8 +273,10 @@ package hsv_core_pkg;
   typedef struct packed {
     logic             read;
     logic             write;
+    logic             wait_irq;
     logic             write_flip;
     logic             write_mask;
+    logic             mode_return;
     logic             is_immediate;
     logic [4:0]       short_immediate;
     exec_mem_common_t common;
@@ -364,6 +366,24 @@ package hsv_core_pkg;
   // -------------- Commit structs ---------------
 
   typedef struct packed {
+    logic flush;
+    logic trap;
+    logic mode_return;
+    logic wait_irq;
+  } commit_action_bits_t;
+
+  typedef enum logic [$bits(
+commit_action_bits_t
+) - 1:0] {
+    COMMIT_NEXT      = 4'b0000,
+    COMMIT_JUMP      = 4'b1000,
+    COMMIT_EXCEPTION = 4'b1100,
+    COMMIT_MODE_RET  = 4'b1110,
+    COMMIT_WFI       = 4'b1001
+  } commit_action_t;
+
+  typedef struct packed {
+    commit_action_t   action;
     word              next_pc;
     word              result;
     logic             jump;

@@ -14,7 +14,9 @@ module hsv_core_decode
 
     input  logic        ready_i,
     output logic        valid_o,
-    output issue_data_t issue_data
+    output issue_data_t issue_data,
+
+    input privilege_t current_mode
 );
 
   word insn;
@@ -80,7 +82,9 @@ module hsv_core_decode
 
       .illegal (illegal_ctrlstatus),
       .common_i(common),
-      .common_o(common_ctrlstatus)
+      .common_o(common_ctrlstatus),
+
+      .current_mode
   );
 
   hsv_core_decode_common decode_common (
