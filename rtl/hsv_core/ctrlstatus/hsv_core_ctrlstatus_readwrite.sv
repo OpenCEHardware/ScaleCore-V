@@ -160,6 +160,9 @@ module hsv_core_ctrlstatus_readwrite
       regs_wr_data <= write_data;
       regs_wr_biten <= write_mask;
     end
+
+    if (~do_read) read_done <= 1;
+    if (~do_write) write_done <= 1;
   end
 
   always_ff @(posedge clk_core or negedge rst_core_n)

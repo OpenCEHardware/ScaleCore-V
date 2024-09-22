@@ -64,7 +64,7 @@ module hsv_core_ctrlstatus
   logic regs_wr_ack;
   logic regs_wr_err;
 
-  assign regs_in.MHARTID.rd_ack = regs_out.MHARTID.req & regs_out.MHARTID.req_is_wr;
+  assign regs_in.MHARTID.rd_ack = regs_out.MHARTID.req & ~regs_out.MHARTID.req_is_wr;
   assign regs_in.MHARTID.rd_data.VALUE = HART_ID;
 
   assign flush_acks = {
