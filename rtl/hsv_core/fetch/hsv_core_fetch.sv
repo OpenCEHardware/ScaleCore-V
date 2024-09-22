@@ -111,13 +111,18 @@ module hsv_core_fetch
     else state <= next_state;
 
   always_ff @(posedge clk_core) begin
-    if (flush_req) burst_base <= flush_target;
-    else if (fetch_start) burst_base <= burst_base + word'(BytesPerInsn * BurstLen);
+    if (fetch_start) burst_base <= burst_base + word'(BytesPerInsn * BurstLen);
 
-    if (flush_req) pc <= flush_target;
-    else if (fetch_beat) pc <= pc_increment;
+    if (fetch_beat) pc <= pc_increment;
 
-    if (fetch_beat | flush_ack) pc_increment <= pc + word'(BytesPerInsn);
+    if (fetch_beat | (~flush_req & flush_ack)) pc_increment <= pc_increment + word'(BytesPerInsn);
+
+    if (flush_req) begin
+      burst_base <= flush_target;
+
+      pc <= flush_target;
+      pc_increment <= flush_target;
+    end
   end
 
 endmodule
