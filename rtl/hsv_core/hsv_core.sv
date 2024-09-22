@@ -1,7 +1,8 @@
 module hsv_core
   import hsv_core_pkg::*;
 #(
-    parameter word HART_ID = 0
+    parameter word HART_ID         = 0,
+    parameter int  FETCH_BURST_LEN = 4
 ) (
     input logic clk_core,
     input logic rst_core_n,
@@ -59,7 +60,9 @@ module hsv_core
   logic regfile_wr_en;
   reg_addr regfile_rs1_addr, regfile_rs2_addr, regfile_wr_addr;
 
-  hsv_core_fetch fetch (
+  hsv_core_fetch #(
+      .BURST_LEN(FETCH_BURST_LEN)
+  ) fetch (
       .clk_core,
       .rst_core_n,
 

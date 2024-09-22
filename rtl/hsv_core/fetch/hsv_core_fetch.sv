@@ -1,6 +1,8 @@
 module hsv_core_fetch
   import hsv_core_pkg::*;
-(
+#(
+    parameter int BURST_LEN = 4
+) (
     input logic clk_core,
     input logic rst_core_n,
 
@@ -15,8 +17,6 @@ module hsv_core_fetch
     axib_if.m imem
 );
 
-  // We request 8 instructions in advance per beat (prefetching)
-  localparam int BurstLen = 8;
   localparam int BytesPerInsn = $bits(word) / 8;
 
   typedef enum int unsigned {
@@ -58,8 +58,8 @@ module hsv_core_fetch
   assign imem.arburst = AXI_BURST_INCR;
   // 4 bytes (1 word) per beat
   assign imem.arsize = AXI_SIZE_4;
-  // BurstLen beats per burst
-  assign imem.arlen = ($bits(imem.arlen))'(BurstLen - 1);
+  // We request 4 instructions in advance per beat (prefetching)
+  assign imem.arlen = ($bits(imem.arlen))'(BURST_LEN - 1);
 
   assign valid_o = imem.rvalid;
   assign imem.rready = ready_i;
@@ -111,7 +111,7 @@ module hsv_core_fetch
     else state <= next_state;
 
   always_ff @(posedge clk_core) begin
-    if (fetch_start) burst_base <= burst_base + word'(BytesPerInsn * BurstLen);
+    if (fetch_start) burst_base <= burst_base + word'(BytesPerInsn * BURST_LEN);
 
     if (fetch_beat) pc <= pc_increment;
 
