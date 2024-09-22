@@ -71,7 +71,7 @@ module hsv_core_ctrlstatus_readwrite
       write_permitted = 0;
     end
 
-    if (csr_is_read_only(csr_num)) read_permitted = 0;
+    if (csr_is_read_only(csr_num)) write_permitted = 0;
 
     if (cmd.is_immediate) write_data = word'(cmd.short_immediate);
     else write_data = cmd.common.rs1;
