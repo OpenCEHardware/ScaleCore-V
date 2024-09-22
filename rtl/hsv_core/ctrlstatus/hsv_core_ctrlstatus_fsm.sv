@@ -28,7 +28,7 @@ module hsv_core_ctrlstatus_fsm
 );
 
   typedef enum int unsigned {
-    TRAP,
+    SETTLE,
     FLUSH_ENTER,
     FLUSH_EXIT,
     RUN,
@@ -96,7 +96,7 @@ module hsv_core_ctrlstatus_fsm
     next_state = state;
 
     unique case (state)
-      TRAP: begin
+      SETTLE: begin
         jump       = 1;
         flush_req  = 1;
         next_state = FLUSH_ENTER;
@@ -120,7 +120,7 @@ module hsv_core_ctrlstatus_fsm
       RUN: begin
         flush_req = 0;
 
-        if (ctrl_flush_begin) next_state = TRAP;
+        if (ctrl_flush_begin) next_state = SETTLE;
         else if (irq_pending) next_state = IRQ_PENDING;
       end
 
@@ -128,7 +128,7 @@ module hsv_core_ctrlstatus_fsm
         flush_req = 0;
         ctrl_begin_irq = 1;
 
-        if (ctrl_flush_begin | ctrl_commit) next_state = TRAP;
+        if (ctrl_flush_begin | ctrl_commit) next_state = SETTLE;
       end
 
       default: flush_req = 'x;
@@ -144,7 +144,7 @@ module hsv_core_ctrlstatus_fsm
 
   always_ff @(posedge clk_core or negedge rst_core_n)
     if (~rst_core_n) begin
-      state <= TRAP;
+      state <= SETTLE;
       current_mode <= MACHINE_MODE;
     end else begin
       state <= next_state;
