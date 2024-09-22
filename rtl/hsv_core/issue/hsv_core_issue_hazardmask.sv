@@ -32,14 +32,13 @@ module hsv_core_issue_hazardmask
   assign rs2 = temp_rs2[RegAmount-1:1];
   assign rd = temp_rd[RegAmount-1:1];
 
-  assign out = issue_data;
-
   always_ff @(posedge clk_core) begin
     if (~stall) begin
       valid_o <= valid_i;
 
-      rd_mask <= rd;
+      out <= issue_data;
       mask <= rs1 | rs2 | rd;
+      rd_mask <= rd;
     end
 
     if (flush_req) valid_o <= 0;

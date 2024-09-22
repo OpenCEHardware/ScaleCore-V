@@ -95,7 +95,7 @@ module hsv_core_issue_fork
   // assign data.exec_mem_data.mem_data.common = exec_mem_common;
 
   always_ff @(posedge clk_core) begin
-    automatic logic common_valid = valid_i & ~hazard;
+    automatic logic common_valid = valid_i & ~stall;
 
     if (~stall) begin
       last_rs1_addr <= issue_data.common.rs1_addr;
