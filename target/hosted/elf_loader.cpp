@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 
 #include <elf.h>
 #include <errno.h>
@@ -55,13 +56,20 @@ elf_loader::elf_loader(simulation &sim, const char *path)
 		if (segment_header->p_type != PT_LOAD)
 			continue;
 
+		bool read_only = !(segment_header->p_flags & PF_W);
+
 		auto *data = static_cast<char *>(elf_base) + segment_header->p_offset;
 		Elf32_Addr base = segment_header->p_vaddr;
 		std::uint32_t file_size = segment_header->p_filesz;
 		std::uint32_t region_size = segment_header->p_memsz;
 
-		if (file_size > 0)
-			this->segments.push_back(memory_region{sim, base, data, file_size});
+		if (file_size > 0) {
+			memory_region region{sim, base, data, file_size};
+			if (read_only)
+				region.set_read_only();
+
+			this->segments.push_back(std::move(region));
+		}
 
 		std::uint32_t zero_size = region_size - file_size;
 		if (zero_size > 0) {
@@ -72,7 +80,12 @@ elf_loader::elf_loader(simulation &sim, const char *path)
 			}
 
 			this->mappings.push_back(mapping{zeroed, zero_size});
-			this->segments.push_back(memory_region{sim, base, zeroed, zero_size});
+
+			memory_region region{sim, base, zeroed, zero_size};
+			if (read_only)
+				region.set_read_only();
+
+			this->segments.push_back(std::move(region));
 		}
 	}
 
