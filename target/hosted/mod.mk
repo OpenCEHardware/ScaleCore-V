@@ -7,5 +7,5 @@ define core
   $(this)/rtl_files := hosted_top.sv
 
   $(this)/vl_main  := main.cpp
-  $(this)/vl_files := axi.cpp elf_loader.cpp simulation.cpp
+  $(this)/vl_files := axi.cpp elf_loader.cpp magic_io.cpp simulation.cpp
 endef

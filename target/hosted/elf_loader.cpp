@@ -1,5 +1,7 @@
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <utility>
 
 #include <elf.h>
@@ -27,7 +29,7 @@ elf_loader::elf_loader(simulation &sim, const char *path)
 
 	auto elf_size = static_cast<std::size_t>(end_offset);
 
-	void *elf_base = ::mmap(nullptr, elf_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+	auto *elf_base = static_cast<char *>(::mmap(nullptr, elf_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0));
 	if (elf_base == MAP_FAILED) {
 		::close(fd);
 		this->error_ = errno;
@@ -39,26 +41,39 @@ elf_loader::elf_loader(simulation &sim, const char *path)
 
 	this->mappings.push_back(mapping{elf_base, elf_size});
 
-	auto *header = static_cast<Elf32_Ehdr*>(elf_base);
+	auto *header = reinterpret_cast<Elf32_Ehdr *>(elf_base);
 
 	unsigned char *magic = header->e_ident;
-	if (magic[0] != ELFMAG0 || magic[1] != ELFMAG1 || magic[2] != ELFMAG2 || magic[3] != ELFMAG3
-	 || header->e_type != ET_EXEC || header->e_machine != EM_RISCV || header->e_version != EV_CURRENT
-	 || header->e_phoff == 0 || header->e_phentsize < sizeof(Elf32_Phdr) || header->e_phnum == 0)
+	if (magic[EI_MAG0] != ELFMAG0 || magic[EI_MAG1] != ELFMAG1 || magic[EI_MAG2] != ELFMAG2
+	 || magic[EI_MAG3] != ELFMAG3 || magic[EI_CLASS] != ELFCLASS32 || magic[EI_DATA] != ELFDATA2LSB
+	 || magic[EI_VERSION] != EV_CURRENT || header->e_type != ET_EXEC || header->e_machine != EM_RISCV
+	 || header->e_version != EV_CURRENT || header->e_phoff == 0 || header->e_phentsize < sizeof(Elf32_Phdr)
+	 || header->e_phnum == 0)
 	{
+		std::fprintf(stderr, "Error: '%s' is not a valid ELF executable for 32-bit little-endian EM_RISCV\n", path);
+
 		this->error_ = ENOEXEC;
 		return;
 	}
 
-	auto *segment_base = static_cast<char *>(elf_base) + header->e_phoff;
 	for (std::uint16_t i = 0; i < header->e_phnum; ++i) {
-		auto *segment_header = reinterpret_cast<Elf32_Phdr *>(segment_base + i * header->e_phentsize);
+		auto *segment_header = reinterpret_cast<Elf32_Phdr *>(elf_base + header->e_phoff + i * header->e_phentsize);
+		if (segment_header->p_type == PT_DYNAMIC || segment_header->p_type == PT_INTERP) {
+			std::fprintf(stderr, "Error: '%s' is not statically linked\n", path);
+
+			this->error_ = ENOEXEC;
+			return;
+		}
+	}
+
+	for (std::uint16_t i = 0; i < header->e_phnum; ++i) {
+		auto *segment_header = reinterpret_cast<Elf32_Phdr *>(elf_base + header->e_phoff + i * header->e_phentsize);
 		if (segment_header->p_type != PT_LOAD)
 			continue;
 
 		bool read_only = !(segment_header->p_flags & PF_W);
 
-		auto *data = static_cast<char *>(elf_base) + segment_header->p_offset;
+		auto *data = elf_base + segment_header->p_offset;
 		Elf32_Addr base = segment_header->p_vaddr;
 		std::uint32_t file_size = segment_header->p_filesz;
 		std::uint32_t region_size = segment_header->p_memsz;
@@ -90,6 +105,29 @@ elf_loader::elf_loader(simulation &sim, const char *path)
 	}
 
 	this->entrypoint_ = header->e_entry;
+
+	Elf32_Shdr *sym_table = nullptr;
+	for (std::uint16_t i = 0; i < header->e_shnum; ++i) {
+		auto *section_header = reinterpret_cast<Elf32_Shdr *>(elf_base + header->e_shoff + i * header->e_shentsize);
+		if (section_header->sh_type == SHT_SYMTAB) {
+			sym_table = section_header;
+			break;
+		}
+	}
+
+	const char *str_table = nullptr;
+	if (sym_table && sym_table->sh_link != SHN_UNDEF) {
+		auto *section_header = reinterpret_cast<Elf32_Shdr *>(elf_base + header->e_shoff + sym_table->sh_link * header->e_shentsize);
+		str_table = elf_base + section_header->sh_offset;
+	}
+
+	for (std::uint32_t sym_offset = 0; sym_table && sym_offset < sym_table->sh_size; sym_offset += sym_table->sh_entsize) {
+		auto *symbol = reinterpret_cast<Elf32_Sym *>(elf_base + sym_table->sh_offset + sym_offset);
+		if (str_table && !std::strcmp(str_table + symbol->st_name, "tohost")) {
+			this->magic_io_base_ = symbol->st_value;
+			break;
+		}
+	}
 }
 
 elf_loader::~elf_loader()

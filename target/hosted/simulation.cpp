@@ -12,17 +12,54 @@ namespace
 memory_mapped::memory_mapped(simulation &sim, unsigned base, unsigned len)
 : sim{sim}, base{base}, len{len}
 {
+	unsigned start = base;
 	unsigned end = base + len - 1;
 
-	auto it = sim.mappings.begin();
-	while (it != sim.mappings.end()) {
+	auto &mappings = sim.mappings;
+
+	bool retry;
+	do {
+		retry = false;
+
+		auto it = mappings.begin();
+		while (it != mappings.end()) {
+			if (end >= it->start && start <= it->end) {
+				unsigned keep_lo = std::min(it->end + 1, std::max(it->start, start)) - it->start;
+				unsigned keep_hi = it->end + 1 - std::max(it->start, std::min(it->end + 1, end + 1));
+
+				if (keep_lo != 0 && keep_hi != 0) {
+					simulation::mapping hi_half{it->end - keep_hi + 1, it->end, it->agent};
+
+					it->end = it->start + keep_lo - 1;
+					mappings.insert(++it, hi_half);
+
+					retry = true;
+					break;
+				} else if (keep_lo != 0) {
+					it->end = it->start + keep_lo - 1;
+				} else if (keep_hi != 0) {
+					it->start = it->end - keep_hi + 1;
+				} else {
+					mappings.erase(it);
+
+					retry = true;
+					break;
+				}
+			}
+
+			++it;
+		}
+	} while (retry);
+
+	auto it = mappings.begin();
+	while (it != mappings.end()) {
 		if (base < it->start)
 			break;
 
 		++it;
 	}
 
-	sim.mappings.insert(it, simulation::mapping{base, end, this});
+	mappings.insert(it, simulation::mapping{base, end, this});
 }
 
 memory_mapped::memory_mapped(memory_mapped &&other)
@@ -30,10 +67,8 @@ memory_mapped::memory_mapped(memory_mapped &&other)
 {
 	auto &mappings = this->sim.mappings;
 	for (auto it = mappings.begin(); it != mappings.end(); ++it)
-		if (it->agent == &other) {
+		if (it->agent == &other)
 			it->agent = this;
-			break;
-		}
 }
 
 memory_mapped::~memory_mapped()
@@ -69,8 +104,10 @@ bool memory_mapped::write_relative_strobe(unsigned address, unsigned data, unsig
 	return this->write_relative(address, (data & mask) | (current & ~mask));
 }
 
-void simulation::run()
+int simulation::run()
 {
+	this->exit_code_ = 0;
+
 	if (!this->top) {
 		this->top = std::make_unique<Vtop>();
 		auto &top = *this->top;
@@ -114,15 +151,15 @@ void simulation::run()
 	do {
 		do
 			this->run_cycles(HOT_LOOP_CYCLES);
-		while (!this->has_pending_io() && !this->halt);
+		while (!this->has_pending_io() && !this->halt_);
 
 		bool io_idle;
 		do {
 			do
 				this->io_cycle();
-			while (this->has_pending_io() && !this->halt);
+			while (this->has_pending_io() && !this->halt_);
 
-			if (this->halt)
+			if (this->halt_)
 				break;
 
 			io_idle = true;
@@ -135,10 +172,15 @@ void simulation::run()
 				}
 			}
 		} while (!io_idle);
-	} while (!this->halt);
+	} while (!this->halt_);
 
+	int exit_code = this->exit_code_;
 	this->io_cycle();
-	this->halt = false;
+
+	this->halt_ = false;
+	this->exit_code_ = 0;
+
+	return exit_code;
 }
 
 bool simulation::has_pending_io()

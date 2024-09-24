@@ -1,6 +1,7 @@
 #ifndef HOSTED_ELF_LOADER_HPP
 #define HOSTED_ELF_LOADER_HPP
 
+#include <optional>
 #include <vector>
 
 #include "memory_region.hpp"
@@ -23,6 +24,11 @@ class elf_loader
 			return this->error_;
 		}
 
+		inline std::optional<unsigned> magic_io_base() const noexcept
+		{
+			return this->magic_io_base_;
+		}
+
 	private:
 		struct mapping
 		{
@@ -34,6 +40,7 @@ class elf_loader
 		std::vector<mapping>       mappings;
 		unsigned                   entrypoint_;
 		int                        error_;
+		std::optional<unsigned>    magic_io_base_;
 };
 
 #endif

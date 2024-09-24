@@ -63,6 +63,11 @@ class memory_mapped
 			return this->len;
 		}
 
+		inline simulation &get_sim() noexcept
+		{
+			return this->sim;
+		}
+
 		virtual bool read_relative(unsigned address, unsigned &data) = 0;
 		virtual bool write_relative(unsigned address, unsigned data) = 0;
 
@@ -81,11 +86,12 @@ class simulation
 	public:
 		simulation() = default;
 
-		void run();
+		int run();
 
-		inline void stop() noexcept
+		inline void halt(int code) noexcept
 		{
-			this->halt = true;
+			this->halt_ = true;
+			this->exit_code_ = code;
 		}
 
 		inline void set_trace_path(std::string trace_path) noexcept
@@ -94,6 +100,8 @@ class simulation
 			this->trace_path = trace_path;
 #endif
 		}
+
+		memory_mapped *resolve_address(unsigned address);
 
 	private:
 		struct mapping
@@ -108,7 +116,8 @@ class simulation
 		axi_queue             dmem_r_queue;
 		axi_queue             dmem_w_queue;
 		std::vector<mapping>  mappings;
-		bool                  halt = false;
+		bool                  halt_ = false;
+		int                   exit_code_;
 
 #if VM_TRACE
 		std::uint64_t                  time = 0;
@@ -124,8 +133,6 @@ class simulation
 		bool has_pending_io();
 
 		void run_cycles(unsigned cycles);
-
-		memory_mapped *resolve_address(unsigned address);
 };
 
 #endif
