@@ -103,6 +103,11 @@ class simulation
 
 		memory_mapped *resolve_address(unsigned address);
 
+		std::uint64_t cycles() const noexcept
+		{
+			return this->time_ / 2;
+		}
+
 	private:
 		struct mapping
 		{
@@ -112,6 +117,7 @@ class simulation
 		};
 
 		std::unique_ptr<Vtop> top;
+		std::uint64_t         time_ = 0;
 		axi_queue             imem_r_queue;
 		axi_queue             dmem_r_queue;
 		axi_queue             dmem_w_queue;
@@ -120,7 +126,6 @@ class simulation
 		int                   exit_code_;
 
 #if VM_TRACE
-		std::uint64_t                  time = 0;
 #if VM_TRACE_FST
 		std::unique_ptr<VerilatedFstC> trace;
 #else

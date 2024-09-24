@@ -298,17 +298,19 @@ void simulation::run_cycles(unsigned cycles)
 	for (unsigned i = 0; i < cycles; ++i) {
 #if VM_TRACE
 		if (this->trace)
-			trace->dump(this->time++);
+			trace->dump(this->time_);
 #endif
 
+		this->time_++;
 		top.clk = 0;
 		top.eval();
 
 #if VM_TRACE
 		if (this->trace)
-			trace->dump(this->time++);
+			trace->dump(this->time_);
 #endif
 
+		this->time_++;
 		top.clk = 1;
 		top.eval();
 	}

@@ -1,3 +1,5 @@
+#include <cinttypes>
+#include <cstdint>
 #include <cstdio>
 
 #include "magic_io.hpp"
@@ -18,8 +20,9 @@ bool magic_io_agent::write_relative(unsigned address, unsigned data)
 	if (address != HTIF_TOHOST_LO)
 		return true;
 	else if (data & 1) {
+		auto cycles = this->get_sim().cycles();
 		unsigned status = data >> 1;
-		std::fprintf(stderr, "[magic] exited with status code %u\n", status);
+		std::fprintf(stderr, "[magic] exited with status %u after %" PRIu64 " cycles\n", status, cycles);
 
 		this->get_sim().halt(static_cast<int>(status));
 		return true;
