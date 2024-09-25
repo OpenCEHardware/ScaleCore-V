@@ -39,7 +39,7 @@ class elf_loader
 		std::vector<memory_region> segments;
 		std::vector<mapping>       mappings;
 		unsigned                   entrypoint_;
-		int                        error_;
+		int                        error_ = 0;
 		std::optional<unsigned>    magic_io_base_;
 };
 

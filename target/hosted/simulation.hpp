@@ -1,6 +1,7 @@
 #ifndef HOSTED_SIMULATION_HPP
 #define HOSTED_SIMULATION_HPP
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -90,8 +91,8 @@ class simulation
 
 		inline void halt(int code) noexcept
 		{
-			this->halt_ = true;
 			this->exit_code_ = code;
+			this->halt_.store(true, std::memory_order_release);
 		}
 
 		inline void set_trace_path(std::string trace_path) noexcept
@@ -122,7 +123,7 @@ class simulation
 		axi_queue             dmem_r_queue;
 		axi_queue             dmem_w_queue;
 		std::vector<mapping>  mappings;
-		bool                  halt_ = false;
+		std::atomic_bool      halt_ = false;
 		int                   exit_code_;
 
 #if VM_TRACE
@@ -138,6 +139,11 @@ class simulation
 		bool has_pending_io();
 
 		void run_cycles(unsigned cycles);
+
+		inline bool halting() noexcept
+		{
+			return this->halt_.load(std::memory_order_acquire);
+		}
 };
 
 #endif

@@ -1,3 +1,8 @@
+#include <atomic>
+#include <chrono>
+#include <cinttypes>
+#include <cstdint>
+#include <cstdio>
 #include <memory>
 
 #include "Vtop.h"
@@ -106,8 +111,6 @@ bool memory_mapped::write_relative_strobe(unsigned address, unsigned data, unsig
 
 int simulation::run()
 {
-	this->exit_code_ = 0;
-
 	if (!this->top) {
 		this->top = std::make_unique<Vtop>();
 		auto &top = *this->top;
@@ -148,18 +151,20 @@ int simulation::run()
 
 	constexpr unsigned HOT_LOOP_CYCLES = 8;
 
+	auto start = std::chrono::steady_clock::now();
+
 	do {
 		do
 			this->run_cycles(HOT_LOOP_CYCLES);
-		while (!this->has_pending_io() && !this->halt_);
+		while (!this->has_pending_io() && !this->halting());
 
 		bool io_idle;
 		do {
 			do
 				this->io_cycle();
-			while (this->has_pending_io() && !this->halt_);
+			while (this->has_pending_io() && !this->halting());
 
-			if (this->halt_)
+			if (this->halting())
 				break;
 
 			io_idle = true;
@@ -172,13 +177,28 @@ int simulation::run()
 				}
 			}
 		} while (!io_idle);
-	} while (!this->halt_);
+	} while (!this->halting());
+
+	auto end = std::chrono::steady_clock::now();
 
 	int exit_code = this->exit_code_;
 	this->io_cycle();
 
-	this->halt_ = false;
 	this->exit_code_ = 0;
+	this->halt_.store(false, std::memory_order_release);
+
+	auto cycles = this->cycles();
+	auto micros = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+	float cycles_per_ms = cycles * 1000 / static_cast<float>(micros);
+	if (micros == 0)
+		cycles_per_ms = 0.0;
+
+	std::fprintf(
+		stderr,
+		"Exited with status %u after %" PRIu64 " cycles in %.5fs (~%.1f cycles/ms)\n",
+		exit_code, cycles, static_cast<float>(micros) / 1'000'000, cycles_per_ms
+	);
 
 	return exit_code;
 }
