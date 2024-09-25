@@ -1,7 +1,11 @@
+#include <atomic>
+#include <csignal>
 #include <cstdio>
 #include <cstring>
 #include <memory>
 #include <utility>
+
+#include <unistd.h>
 
 #include "args.hxx"
 #include "elf_loader.hpp"
@@ -11,6 +15,15 @@
 namespace
 {
 	constexpr unsigned HSV_CORE_RESET_PC = 0x0;
+
+	std::atomic<simulation *> alarm_sim = nullptr;
+
+	void simulation_timeout(int)
+	{
+		auto *sim = alarm_sim.exchange(nullptr);
+		if (sim)
+			sim->timeout();
+	}
 }
 
 int main(int argc, char **argv)
@@ -29,7 +42,12 @@ int main(int argc, char **argv)
 
 	args::ValueFlag<std::string> trace_out
 	(
-		parser, "trace", "trace output file", {"trace"}
+		parser, "path", "trace output file", {"trace"}
+	);
+
+	args::ValueFlag<unsigned> timeout
+	(
+		parser, "secs", "fail the simulation if it won't halt within a given timeout", {"timeout"}
 	);
 
 	args::Positional<std::string> image
@@ -98,5 +116,15 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	return sim.run();
+	if (timeout && *timeout > 0) {
+		alarm_sim.store(&sim);
+		std::signal(SIGALRM, simulation_timeout);
+		::alarm(*timeout);
+	} else if (timeout)
+		std::fputs("Warning: --timeout=0 disables the timeout\n", stderr);
+
+	int exit_code = sim.run();
+
+	alarm_sim.store(nullptr);
+	return exit_code;
 }

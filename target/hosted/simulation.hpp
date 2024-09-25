@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstdlib>
 #include <memory>
 #include <string>
 #include <vector>
@@ -89,6 +90,12 @@ class simulation
 
 		int run();
 
+		inline void timeout() noexcept
+		{
+			this->timed_out_ = true;
+			this->halt(EXIT_FAILURE);
+		}
+
 		inline void halt(int code) noexcept
 		{
 			this->exit_code_ = code;
@@ -125,6 +132,7 @@ class simulation
 		std::vector<mapping>  mappings;
 		std::atomic_bool      halt_ = false;
 		int                   exit_code_;
+		bool                  timed_out_ = false;
 
 #if VM_TRACE
 #if VM_TRACE_FST

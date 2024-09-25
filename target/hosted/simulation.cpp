@@ -181,10 +181,14 @@ int simulation::run()
 
 	auto end = std::chrono::steady_clock::now();
 
+	if (this->timed_out_)
+		std::fputs("Simulation timed out!\n", stderr);
+
 	int exit_code = this->exit_code_;
 	this->io_cycle();
 
 	this->exit_code_ = 0;
+	this->timed_out_ = false;
 	this->halt_.store(false, std::memory_order_release);
 
 	auto cycles = this->cycles();
