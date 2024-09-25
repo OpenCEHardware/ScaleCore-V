@@ -35,6 +35,9 @@ module hsv_core_mem_request
     input insn_token commit_token
 );
 
+  localparam int AddrSubwordBits = $clog2($bits(word) / 8);
+
+  word word_address;
   logic is_read, is_write, legal_transaction;
   logic read_stall, write_stall;
   logic commit_waits_for_me;
@@ -97,6 +100,10 @@ module hsv_core_mem_request
       read_stall  = ~fence_ready;
       write_stall = ~fence_ready;
     end
+
+    // Discard address bits [1:0], AXI transactions must be word-aligned
+    word_address = request.address;
+    word_address[AddrSubwordBits-1:0] = '0;
   end
 
   always_ff @(posedge clk_core or negedge rst_core_n)
@@ -113,9 +120,9 @@ module hsv_core_mem_request
     end
 
   always_ff @(posedge clk_core) begin
-    if (~dmem_ar_stall) dmem_ar_address <= request.address;
+    if (~dmem_ar_stall) dmem_ar_address <= word_address;
 
-    if (~dmem_aw_stall) dmem_aw_address <= request.address;
+    if (~dmem_aw_stall) dmem_aw_address <= word_address;
 
     if (~dmem_w_stall) begin
       dmem_w_data   <= request.write_data;

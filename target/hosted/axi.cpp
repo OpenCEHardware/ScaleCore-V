@@ -32,9 +32,11 @@ void axi_queue::read_tx(
 
 	auto &front = this->queue.front();
 	if (front.completed) {
+		auto &beat = front.beats[front.read_index];
+
 		rid = front.channel_id;
-		rdata = front.beats[front.read_index].data;
-		rresp = front.error ? AXI_RESP_ERR : AXI_RESP_OK;
+		rdata = beat.data;
+		rresp = (front.error || beat.read_error) ? AXI_RESP_ERR : AXI_RESP_OK;
 		rlast = front.read_index + 1 == front.write_index;
 		rvalid = 1;
 	}

@@ -110,11 +110,6 @@ module hsv_core_mem_address
         misaligned_address = 'x;
       end
     endcase
-
-    // Finally, zero-out the lower bits as we don't need them anymore. This
-    // `address` has now become the actual address the CPU core will send
-    // through dmem to the interconnect.
-    address[AddrSubwordBits-1:0] = '0;
   end
 
   always_ff @(posedge clk_core) begin

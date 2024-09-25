@@ -77,7 +77,7 @@ module hs_fifo #(
     // https://community.intel.com/t5/Programmable-Devices/Has-anyone-successfully-inferred-read-enable-ports-on-true-dual/m-p/146996
     read_data <= fifo[read_ptr];
 
-    if (~out_stall) stall_data <= read_data;
+    if (~was_stalled) stall_data <= read_data;
 
     was_stalled <= out_stall;
   end

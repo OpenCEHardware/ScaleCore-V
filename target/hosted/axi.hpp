@@ -6,7 +6,12 @@
 struct axi_beat
 {
 	unsigned data;
-	unsigned strobe;
+
+	union
+	{
+		bool     read_error;
+		unsigned strobe;
+	};
 };
 
 struct axi_transaction
@@ -102,8 +107,7 @@ void axi_queue::do_reads(F callback)
 			back.error = true;
 		else {
 			auto &beat = back.beats[back.write_index];
-			if (!agent->read(back.address, beat.data))
-				back.error = true;
+			beat.read_error = !agent->read(back.address, beat.data);
 
 			back.address += 4;
 			back.write_index++;
