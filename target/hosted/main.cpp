@@ -2,6 +2,7 @@
 #include <csignal>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <memory>
 #include <utility>
 
@@ -73,7 +74,7 @@ int main(int argc, char **argv)
 	bool tracing = false;
 	if (trace_out) {
 #if VM_TRACE
-		sim.set_trace_path(std::move(*trace_out));
+		sim.set_trace_path(*trace_out);
 		tracing = true;
 #else
 		std::fputs("Warning: trace output was requested, but simulation was compiled without trace support\n", stderr);
@@ -124,6 +125,32 @@ int main(int argc, char **argv)
 		std::fputs("Warning: --timeout=0 disables the timeout\n", stderr);
 
 	int exit_code = sim.run();
+
+#if VM_TRACE
+	if (trace_out) {
+		try {
+			auto size = std::filesystem::file_size(*trace_out);
+
+			unsigned factor;
+			const char *suffix;
+
+			if (size < 1024 * 1024) {
+				factor = 1024;
+				suffix = "KiB";
+			} else if (size < 1024 * 1024 * 1024) {
+				factor = 1024 * 1024;
+				suffix = "MiB";
+			} else {
+				factor = 1024 * 1024 * 1024;
+				suffix = "GiB";
+			}
+
+			std::fprintf(stderr, "Signal dump file size is %.1f %s\n", static_cast<float>(size) / factor, suffix);
+		} catch (const std::filesystem::filesystem_error &) {
+			std::fprintf(stderr, "Warning: failed to stat trace file: %s\n", trace_out->c_str());
+		}
+	}
+#endif
 
 	alarm_sim.store(nullptr);
 	return exit_code;
