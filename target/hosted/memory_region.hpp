@@ -1,6 +1,8 @@
 #ifndef HOSTED_MEMORY_REGION_HPP
 #define HOSTED_MEMORY_REGION_HPP
 
+#include <memory>
+
 #include "simulation.hpp"
 
 class memory_region : public memory_mapped
@@ -36,9 +38,25 @@ class memory_region : public memory_mapped
 			return true;
 		}
 
-	private:
+	protected:
 		void *mem;
-		bool  read_only = false;
+
+	private:
+		bool read_only = false;
+};
+
+class owned_memory_region : public memory_region
+{
+	public:
+		inline owned_memory_region(simulation &sim, unsigned base, unsigned len)
+		: memory_region{sim, base, new char[len], len}
+		{}
+
+		inline ~owned_memory_region()
+		{
+			delete[] static_cast<char *>(this->mem);
+			this->mem = nullptr;
+		}
 };
 
 #endif

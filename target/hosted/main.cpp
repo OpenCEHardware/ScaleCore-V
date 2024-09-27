@@ -11,6 +11,7 @@
 #include "args.hxx"
 #include "elf_loader.hpp"
 #include "magic_io.hpp"
+#include "memory_region.hpp"
 #include "simulation.hpp"
 
 namespace
@@ -80,6 +81,10 @@ int main(int argc, char **argv)
 		std::fputs("Warning: trace output was requested, but simulation was compiled without trace support\n", stderr);
 #endif
 	}
+
+	//FIXME: don't hard-code.
+	// Note: unfortunately, this can't be derived from ELF tables
+	owned_memory_region sys_ram(sim, 0x01000000, 0x03000000);
 
 	elf_loader loader(sim, image->c_str());
 	if (int error = loader.error(); error != 0) {

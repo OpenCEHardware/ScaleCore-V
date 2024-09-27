@@ -74,7 +74,7 @@ elf_loader::elf_loader(simulation &sim, const char *path)
 		bool read_only = !(segment_header->p_flags & PF_W);
 
 		auto *data = elf_base + segment_header->p_offset;
-		Elf32_Addr base = segment_header->p_vaddr;
+		Elf32_Addr base = segment_header->p_paddr;
 		std::uint32_t file_size = segment_header->p_filesz;
 		std::uint32_t region_size = segment_header->p_memsz;
 
@@ -96,7 +96,7 @@ elf_loader::elf_loader(simulation &sim, const char *path)
 
 			this->mappings.push_back(mapping{zeroed, zero_size});
 
-			memory_region region{sim, base, zeroed, zero_size};
+			memory_region region{sim, base + file_size, zeroed, zero_size};
 			if (read_only)
 				region.set_read_only();
 
