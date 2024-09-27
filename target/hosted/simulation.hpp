@@ -32,6 +32,16 @@ class memory_mapped
 
 		virtual ~memory_mapped();
 
+		inline virtual bool read_byte(unsigned address, unsigned char &data)
+		{
+			unsigned word;
+			if (!this->read(address & ~0b11, word))
+				return false;
+
+			data = (word >> (8 * (address & 0b11))) & 0xff;
+			return true;
+		}
+
 		inline virtual bool read(unsigned address, unsigned &data)
 		{
 			address -= this->base;

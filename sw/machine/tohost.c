@@ -5,7 +5,10 @@
 
 volatile unsigned tohost;
 
-static unsigned htfi_syscall(unsigned which, unsigned arg0, unsigned arg1, unsigned arg2)
+#define HTIF_CALL_WRITE 64
+#define HTIF_FD_STDOUT  1
+
+static unsigned htif_syscall(unsigned which, unsigned arg0, unsigned arg1, unsigned arg2)
 {
 	volatile uint64_t buffer[8] __attribute__((aligned(64)));
 	buffer[0] = which;
@@ -22,5 +25,5 @@ static unsigned htfi_syscall(unsigned which, unsigned arg0, unsigned arg1, unsig
 
 void m_print(const char *str)
 {
-	htfi_syscall(64, 1, (unsigned)str, strlen(str));
+	htif_syscall(HTIF_CALL_WRITE, HTIF_FD_STDOUT, (unsigned)str, strlen(str));
 }
