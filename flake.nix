@@ -32,8 +32,8 @@
         crossSystem = {
           config = "riscv32-none-elf";
           gcc = {
-            arch = "rv32imafc";
-            abi = "ilp32f";
+            arch = "rv32i_zicsr";
+            abi = "ilp32";
           };
         };
       };
