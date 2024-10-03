@@ -22,7 +22,7 @@ void axi_queue::read_tx(
 
 		if (front.pending)
 			return;
-		else if (front.read_index == front.write_index)
+		else if (front.completed && front.read_index == front.write_index)
 			this->queue.pop();
 	}
 
@@ -61,7 +61,7 @@ void axi_queue::write_tx(
 		return;
 
 	auto &front = this->queue.front();
-	if (front.read_index == front.write_index) {
+	if (front.completed && front.read_index == front.write_index) {
 		bid = front.channel_id;
 		bresp = front.error ? AXI_RESP_ERR : AXI_RESP_OK;
 		bvalid = 1;
