@@ -2,11 +2,15 @@
 
 .global m_trap_entry
 m_trap_entry:
+
+.option push
+.option norelax
 	# We use the scratch CSR as temp storage, it would be impossible
 	# to save the state of all registers otherwise
 	csrw  mscratch, a0
 	la    a0, m_trap_context
 
+	# Save all registers
 	sw    ra,  4(a0)
 	sw    sp,  8(a0)
 	sw    gp,  12(a0)
@@ -39,10 +43,12 @@ m_trap_entry:
 	sw    t5,  120(a0)
 	sw    t6,  124(a0)
 
+	# Next, we save the trap PC, cause and value
+
 	csrr  t0, mepc
 	sw    t0, 0(a0)
 
-	# This value used to be a0
+	# The value in mscratch used to be a0
 	csrr  t1, mscratch
 	sw    t1, 40(a0)
 
@@ -56,7 +62,9 @@ m_trap_entry:
 	sw    t4, 136(a0)
 
 	la    sp, m_trap_stack_top
+	mv    ra, zero
 	jal   m_handle_trap
+.option pop
 
 	# When m_handle_trap returns, it will jump to m_trap_exit, because that
 	# is what comes after this point in code. In other words, the relative
