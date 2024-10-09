@@ -154,7 +154,7 @@ void __attribute__((noreturn)) m_bad_trap(void)
 	m_print_hex(m_trap_context.mcause);
 	m_print_str(" mtval=");
 	m_print_hex(m_trap_context.mtval);
-	m_print_str("\n");
+	m_print_chr('\n');
 
 	m_die(1);
 }

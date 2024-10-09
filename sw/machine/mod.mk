@@ -9,5 +9,6 @@ define core/hsv_machine_sw
     init.c \
     insn_map.c \
     trap.c \
+    semihosting.c \
     tohost.c
 endef

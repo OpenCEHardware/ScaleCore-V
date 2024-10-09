@@ -68,11 +68,42 @@ enum rv_privilege
 	MACHINE_MODE    = 0b11,
 };
 
+void m_print_chr(char c);
 void m_print_hex(unsigned value);
 void m_print_str(const char *str);
 
 #define M_INFO(msg) m_print_str("[m] " msg)
 #define M_LOG(msg)  do { m_print_str("[m] "); m_print_str(__func__); m_print_str("(): " msg); } while (0)
+
+// https://github.com/ARM-software/abi-aa/blob/main/semihosting/semihosting.rst
+enum semihosting_call
+{
+	SEMIHOSTING_SYS_CLOCK         = 0x10,
+	SEMIHOSTING_SYS_CLOSE         = 0x02,
+	SEMIHOSTING_SYS_ELAPSED       = 0x30,
+	SEMIHOSTING_SYS_ERRNO         = 0x13,
+	SEMIHOSTING_SYS_EXIT          = 0x18,
+	SEMIHOSTING_SYS_EXIT_EXTENDED = 0x20,
+	SEMIHOSTING_SYS_FLEN          = 0x0C,
+	SEMIHOSTING_SYS_GET_CMDLINE   = 0x15,
+	SEMIHOSTING_SYS_HEAPINFO      = 0x16,
+	SEMIHOSTING_SYS_ISERROR       = 0x08,
+	SEMIHOSTING_SYS_ISTTY         = 0x09,
+	SEMIHOSTING_SYS_OPEN          = 0x01,
+	SEMIHOSTING_SYS_READ          = 0x06,
+	SEMIHOSTING_SYS_READC         = 0x07,
+	SEMIHOSTING_SYS_REMOVE        = 0x0E,
+	SEMIHOSTING_SYS_RENAME        = 0x0F,
+	SEMIHOSTING_SYS_SEEK          = 0x0A,
+	SEMIHOSTING_SYS_SYSTEM        = 0x12,
+	SEMIHOSTING_SYS_TICKFREQ      = 0x31,
+	SEMIHOSTING_SYS_TIME          = 0x11,
+	SEMIHOSTING_SYS_TMPNAM        = 0x0D,
+	SEMIHOSTING_SYS_WRITE         = 0x05,
+	SEMIHOSTING_SYS_WRITEC        = 0x03,
+	SEMIHOSTING_SYS_WRITE0        = 0x04,
+};
+#define SEMIHOSTING_SYS_
 
 void m_handle_semihosting(void);
 
