@@ -407,8 +407,6 @@ commit_action_bits_t
     commit_action_t   action;
     word              next_pc;
     word              result;
-    logic             jump;
-    logic             trap;
     logic             writeback;
     exception_t       exception_cause;
     logic [31:0]      exception_value;

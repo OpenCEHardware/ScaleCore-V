@@ -59,16 +59,22 @@ module hsv_core_commit
 );
 
   logic alu_trap, foo_trap, mem_trap, branch_trap, ctrlstatus_trap;
-  commit_action_bits_t action;
+  commit_action_bits_t action, alu_action, foo_action, mem_action, branch_action, ctrlstatus_action;
 
   // Extract individual flush/trap/wfi/etc bits
   assign action = used_data.action;
 
-  assign alu_trap = alu_data.trap;
-  assign branch_trap = branch_data.trap;
-  assign ctrlstatus_trap = ctrlstatus_data.trap;
-  assign mem_trap = mem_data.trap;
-  assign foo_trap = foo_data.trap;
+  assign alu_action = alu_data.action;
+  assign foo_action = foo_data.action;
+  assign mem_action = mem_data.action;
+  assign branch_action = branch_data.action;
+  assign ctrlstatus_action = ctrlstatus_data.action;
+
+  assign alu_trap = alu_action.trap;
+  assign foo_trap = foo_action.trap;
+  assign mem_trap = mem_action.trap;
+  assign branch_trap = branch_action.trap;
+  assign ctrlstatus_trap = ctrlstatus_action.trap;
 
   assign alu_ready_o = token == alu_data.common.token;
   assign branch_ready_o = token == branch_data.common.token;
