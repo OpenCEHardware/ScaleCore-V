@@ -7,7 +7,7 @@
 // Do not change existing struct members. Offsets to it are referenced
 // directly within assembly code (see entry_exit.S). If you need to add
 // more members, do so below all existing ones.
-extern struct m_trap_context
+extern struct trap_context
 {
 	unsigned pc;
 
@@ -48,6 +48,23 @@ extern struct m_trap_context
 	unsigned mtval;
 } m_trap_context;
 
-void m_print(const char *str);
+extern const struct exc_map_entry
+{
+	unsigned    code;
+	const char *description;
+} m_exc_map[];
+
+extern const struct insn_map_entry
+{
+	unsigned    mask;
+	unsigned    match;
+	const char *mnemonic;
+} m_insn_map[];
+
+void m_print_hex(unsigned value);
+void m_print_str(const char *str);
+
+void __attribute__((noreturn)) m_die(unsigned code);
+void __attribute__((noreturn)) m_bad_trap(void);
 
 #endif

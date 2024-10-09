@@ -14,7 +14,7 @@ int __attribute__((noreturn)) main()
 {
 	write_csr(mtvec, (uintptr_t)m_trap_entry);
 
-	m_print("[m] early init ok\n");
+	m_print_str("[m] early init ok\n");
 
 	memset(&m_trap_context, 0, sizeof m_trap_context);
 	m_trap_context.pc = (uintptr_t)u_main;

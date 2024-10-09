@@ -23,7 +23,42 @@ static unsigned htif_syscall(unsigned which, unsigned arg0, unsigned arg1, unsig
 	return (unsigned)buffer[0];
 }
 
-void m_print(const char *str)
+void m_print_str(const char *str)
 {
 	htif_syscall(HTIF_CALL_WRITE, HTIF_FD_STDOUT, (unsigned)str, strlen(str));
+}
+
+void m_print_hex(unsigned value)
+{
+	static const char HEX_DIGITS[16] = "0123456789abcdef";
+
+	char buffer[2 * sizeof value + 1];
+
+	int index = 2 * sizeof value;
+	do {
+		index -= 2;
+
+		unsigned lo = value & 0x0f;
+		unsigned hi = (value >> 4) & 0x0f;
+
+		buffer[index] = HEX_DIGITS[hi];
+		buffer[index + 1] = HEX_DIGITS[lo];
+
+		value >>= 8;
+	} while (index > 0);
+
+	buffer[2 * sizeof value] = '\0';
+	m_print_str(buffer);
+}
+
+void __attribute__((noreturn)) m_die(unsigned code)
+{
+	m_print_str("[m] cpu halted\n");
+
+	__sync_synchronize();
+	tohost = (code << 1) | 1;
+	__sync_synchronize();
+
+	while (1)
+		asm volatile ("wfi");
 }

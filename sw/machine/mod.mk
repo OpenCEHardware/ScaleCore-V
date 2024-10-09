@@ -5,7 +5,9 @@ define core/hsv_machine_sw
 
   $(this)/cc_files := \
     entry_exit.S \
+    exc_map.c \
     init.c \
+    insn_map.c \
     trap.c \
     tohost.c
 endef

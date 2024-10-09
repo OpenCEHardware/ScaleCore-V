@@ -61,6 +61,7 @@ m_trap_entry:
 	csrr  t4, mtval
 	sw    t4, 136(a0)
 
+    la    gp, __global_pointer$
 	la    sp, m_trap_stack_top
 	mv    ra, zero
 	jal   m_handle_trap
