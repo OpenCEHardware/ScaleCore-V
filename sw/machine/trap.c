@@ -168,11 +168,17 @@ static void m_handle_breakpoint(void)
 
 static void m_handle_illegal(void)
 {
-	unsigned insn = *(const unsigned *)m_trap_context.pc;
-	if (m_try_emulate(insn)) {
-		m_trap_context.pc += 4;
-		return;
-	}
+	int emulated = 0;
+	unsigned insn;
+
+	do {
+		insn = *(const unsigned *)m_trap_context.pc;
+		if (m_try_emulate(insn)) {
+			emulated = 1;
+			m_trap_context.pc += 4;
+		} else if (emulated)
+			return;
+	} while (emulated);
 
 	if ((insn & MASK_CSRRW) == MATCH_CSRRW || (insn & MASK_CSRRWI) == MATCH_CSRRWI
 	 || (insn & MASK_CSRRC) == MATCH_CSRRC || (insn & MASK_CSRRCI) == MATCH_CSRRCI
