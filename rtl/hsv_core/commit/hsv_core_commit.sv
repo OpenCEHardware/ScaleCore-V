@@ -147,7 +147,7 @@ module hsv_core_commit
     ctrl_trap_value <= used_data.exception_value;
     ctrl_mode_return <= action.mode_return;
 
-    if (!action.trap) ctrl_next_pc <= used_data.next_pc;
+    if (general_commit) ctrl_next_pc <= used_data.next_pc;
 
     if (token_clear) begin
       token <= '0;
