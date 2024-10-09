@@ -157,7 +157,10 @@ module hsv_core_ctrlstatus_readwrite
       default: action = COMMIT_NEXT;
     endcase
 
-    if (illegal | read_error | write_error) action = COMMIT_EXCEPTION;
+    if (illegal | read_error | write_error) begin
+      action = COMMIT_EXCEPTION;
+      exception_cause = EXC_ILLEGAL_INSTRUCTION;
+    end
   end
 
   always_ff @(posedge clk_core) begin
