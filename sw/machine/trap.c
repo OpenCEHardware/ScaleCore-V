@@ -6,9 +6,18 @@ struct trap_context m_trap_context;
 static volatile int m_in_trap;
 
 static void m_handle_breakpoint(void);
+static void m_handle_illegal(void);
+static char m_mode_char(enum rv_privilege mode);
 
 #define MCAUSE_INTERRUPT  (1 << 31)
 #define MSTATUS_MPP_SHIFT 11
+
+#define CSR_OPS_NUM_MASK   0xfff00000
+#define CSR_OPS_NUM_SHIFT  20
+#define CSR_OPS_PRIV_MASK  0x30000000
+#define CSR_OPS_PRIV_SHIFT 28
+#define CSR_OPS_PROT_MASK  0xc0000000
+#define CSR_OPS_PROT_SHIFT 30
 
 #define SEMIHOSTING_MAGIC_PRE  0x01f01013 // sll zero, zero, 31
 #define SEMIHOSTING_MAGIC_POST 0x40705013 // sra zero, zero, 7
@@ -23,6 +32,10 @@ void m_handle_trap(void)
 	m_in_trap = 1;
 
 	switch (m_trap_context.mcause) {
+		case CAUSE_ILLEGAL_INSTRUCTION:
+			m_handle_illegal();
+			break;
+
 		case CAUSE_BREAKPOINT:
 			m_handle_breakpoint();
 			break;
@@ -44,26 +57,9 @@ void __attribute__((noreturn)) m_bad_trap(void)
 
 	int is_interrupt = !!(m_trap_context.mcause & MCAUSE_INTERRUPT);
 
-	char mode;
-	switch ((m_trap_context.mstatus & MSTATUS_MPP) >> MSTATUS_MPP_SHIFT) {
-		case USER_MODE:
-			mode = 'U';
-			break;
-
-		case SUPERVISOR_MODE:
-			mode = 'S';
-			break;
-
-		case MACHINE_MODE:
-			mode = 'M';
-			break;
-
-		default:
-			mode = '?';
-			break;
-	}
-
+	char mode = m_mode_char((m_trap_context.mstatus & MSTATUS_MPP) >> MSTATUS_MPP_SHIFT);
 	const char *exc_cause = "unknown";
+
 	if (!is_interrupt)
 		for (const struct exc_map_entry *entry = m_exc_map; entry->description; ++entry)
 			if (entry->code == m_trap_context.mcause) {
@@ -71,10 +67,8 @@ void __attribute__((noreturn)) m_bad_trap(void)
 				break;
 			}
 
-	const char mode_str[] = {mode, '\0'};
-
 	M_INFO("unhandled ");
-	m_print_str(mode_str);
+	m_print_chr(mode);
 	m_print_str("-mode trap: ");
 
 	if (is_interrupt)
@@ -170,4 +164,79 @@ static void m_handle_breakpoint(void)
 	//TODO: implement a debugger here
 
 	m_bad_trap();
+}
+
+static void m_handle_illegal(void)
+{
+	unsigned insn = *(const unsigned *)m_trap_context.pc;
+	if (m_try_emulate(insn)) {
+		m_trap_context.pc += 4;
+		return;
+	}
+
+	if ((insn & MASK_CSRRW) == MATCH_CSRRW || (insn & MASK_CSRRWI) == MATCH_CSRRWI
+	 || (insn & MASK_CSRRC) == MATCH_CSRRC || (insn & MASK_CSRRCI) == MATCH_CSRRCI
+	 || (insn & MASK_CSRRS) == MATCH_CSRRS || (insn & MASK_CSRRSI) == MATCH_CSRRSI) {
+		int read_only;
+		switch ((insn & CSR_OPS_PROT_MASK) >> CSR_OPS_PROT_SHIFT) {
+			case CSR_RO:
+				read_only = 1;
+				break;
+
+			default:
+				read_only = 0;
+				break;
+		}
+
+		unsigned csr_num = (insn & CSR_OPS_NUM_MASK) >> CSR_OPS_NUM_SHIFT;
+		const char *csr_name = "unknown";
+
+		for (const struct csr_map_entry *entry = m_csr_map; entry->name; ++entry)
+			if (csr_num == entry->csr) {
+				csr_name = entry->name;
+				break;
+			}
+
+		M_INFO("attempt to access non-existent or unauthorized CSR 0x");
+		m_print_hex_bits(csr_num, 12);
+		m_print_str(" (");
+		m_print_str(csr_name);
+		m_print_str(", ");
+		m_print_chr(m_mode_char((insn & CSR_OPS_PRIV_MASK) >> CSR_OPS_PRIV_SHIFT));
+		m_print_str("-level ");
+		m_print_str(read_only ? "R/O" : "R/W");
+		m_print_str(")\n");
+	} else {
+		const char *mnemonic = "<bad or custom opcode>";
+		for (const struct insn_map_entry *entry = m_insn_map; entry->mnemonic; ++entry)
+			if ((insn & entry->mask) == entry->match) {
+				mnemonic = entry->mnemonic;
+				break;
+			}
+
+		M_INFO("unimplemented instruction 0x");
+		m_print_hex(insn);
+		m_print_str(" (");
+		m_print_str(mnemonic);
+		m_print_str(")\n");
+	}
+
+	m_bad_trap();
+}
+
+static char m_mode_char(enum rv_privilege mode)
+{
+	switch (mode) {
+		case USER_MODE:
+			return 'U';
+
+		case SUPERVISOR_MODE:
+			return 'S';
+
+		case MACHINE_MODE:
+			return 'M';
+
+		default:
+			return '?';
+	}
 }

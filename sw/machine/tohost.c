@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -33,7 +34,7 @@ void m_print_str(const char *str)
 	htif_syscall(HTIF_CALL_WRITE, HTIF_FD_STDOUT, (unsigned)str, strlen(str));
 }
 
-void m_print_hex(unsigned value)
+void m_print_hex_bits(unsigned value, int bits)
 {
 	static const char HEX_DIGITS[16] = "0123456789abcdef";
 
@@ -53,7 +54,14 @@ void m_print_hex(unsigned value)
 	} while (index > 0);
 
 	buffer[2 * sizeof value] = '\0';
-	m_print_str(buffer);
+
+	int nibbles = (bits + 3) / 4;
+
+	int offset = 2 * sizeof value - nibbles;
+	if (offset < 0 || offset > 2 * sizeof value)
+		offset = 0;
+
+	m_print_str(buffer + offset);
 }
 
 void __attribute__((noreturn)) m_die(unsigned code)

@@ -1,6 +1,8 @@
 #ifndef MACHINE_M_H
 #define MACHINE_M_H
 
+#include <limits.h>
+
 // CPU state before a trap. You can modify register values within a trap
 // handler, they will take effect once the handler returns.
 //
@@ -54,6 +56,12 @@ extern const struct exc_map_entry
 	const char *description;
 } m_exc_map[];
 
+extern const struct csr_map_entry
+{
+	unsigned    csr;
+	const char *name;
+} m_csr_map[];
+
 extern const struct insn_map_entry
 {
 	unsigned    mask;
@@ -68,12 +76,13 @@ enum rv_privilege
 	MACHINE_MODE    = 0b11,
 };
 
-void m_print_chr(char c);
-void m_print_hex(unsigned value);
-void m_print_str(const char *str);
-
-#define M_INFO(msg) m_print_str("[m] " msg)
-#define M_LOG(msg)  do { m_print_str("[m] "); m_print_str(__func__); m_print_str("(): " msg); } while (0)
+enum rv_csr_prot
+{
+	CSR_RW_00 = 0b00,
+	CSR_RW_01 = 0b01,
+	CSR_RW_10 = 0b10,
+	CSR_RO    = 0b11,
+};
 
 // https://github.com/ARM-software/abi-aa/blob/main/semihosting/semihosting.rst
 enum semihosting_call
@@ -105,7 +114,20 @@ enum semihosting_call
 };
 #define SEMIHOSTING_SYS_
 
+void m_print_chr(char c);
+void m_print_str(const char *str);
+void m_print_hex_bits(unsigned value, int bits);
+
+static inline void m_print_hex(unsigned value)
+{
+	m_print_hex_bits(value, sizeof value * CHAR_BIT);
+}
+
+#define M_INFO(msg) m_print_str("[m] " msg)
+#define M_LOG(msg)  do { m_print_str("[m] "); m_print_str(__func__); m_print_str("(): " msg); } while (0)
+
 void m_handle_semihosting(void);
+int  m_try_emulate(unsigned insn);
 
 void __attribute__((noreturn)) m_die(unsigned code);
 void __attribute__((noreturn)) m_bad_trap(void);
