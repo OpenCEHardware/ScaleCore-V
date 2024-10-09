@@ -1,4 +1,4 @@
-module hsv_core
+module hsv_core_top
   import hsv_core_pkg::*;
 #(
     parameter word HART_ID         = 0,

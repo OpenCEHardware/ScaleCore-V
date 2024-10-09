@@ -1,5 +1,8 @@
-module hosted_top
-  import hsv_core_pkg::*;
+module hsv_core_top_flat
+#(
+    parameter logic [31:0] HART_ID         = 0,
+    parameter int          FETCH_BURST_LEN = 4
+)
 (
     input logic clk,
     input logic rst_n,
@@ -10,6 +13,7 @@ module hosted_top
     output logic [ 7:0] imem_arlen,
     output logic [ 2:0] imem_arsize,
     output logic [ 1:0] imem_arburst,
+    output logic [ 2:0] imem_arprot,
     output logic [31:0] imem_araddr,
 
     output logic        imem_rready,
@@ -25,6 +29,7 @@ module hosted_top
     output logic [ 7:0] dmem_awlen,
     output logic [ 2:0] dmem_awsize,
     output logic [ 1:0] dmem_awburst,
+    output logic [ 2:0] dmem_awprot,
     output logic [31:0] dmem_awaddr,
 
     input  logic        dmem_wready,
@@ -44,6 +49,7 @@ module hosted_top
     output logic [ 7:0] dmem_arlen,
     output logic [ 2:0] dmem_arsize,
     output logic [ 1:0] dmem_arburst,
+    output logic [ 2:0] dmem_arprot,
     output logic [31:0] dmem_araddr,
 
     output logic        dmem_rready,
@@ -63,6 +69,7 @@ module hosted_top
   assign imem_arlen = imem.s.arlen;
   assign imem_arsize = imem.s.arsize;
   assign imem_araddr = imem.s.araddr;
+  assign imem_arprot = 3'b011;
   assign imem_arburst = imem.s.arburst;
   assign imem_arvalid = imem.s.arvalid;
   assign imem.s.arready = imem_arready;
@@ -78,6 +85,7 @@ module hosted_top
   assign dmem_arlen = '0;
   assign dmem_arsize = 3'b010;
   assign dmem_araddr = dmem.s.araddr;
+  assign dmem_arprot = 3'b010;
   assign dmem_arburst = 2'b01;
   assign dmem_arvalid = dmem.s.arvalid;
   assign dmem.s.arready = dmem_arready;
@@ -86,6 +94,7 @@ module hosted_top
   assign dmem_awlen = '0;
   assign dmem_awsize = 3'b010;
   assign dmem_awaddr = dmem.s.awaddr;
+  assign dmem_awprot = 3'b010;
   assign dmem_awburst = 2'b01;
   assign dmem_awvalid = dmem.s.awvalid;
   assign dmem.s.awready = dmem_awready;
@@ -105,8 +114,9 @@ module hosted_top
   assign dmem.s.bresp = dmem_bresp;
   assign dmem.s.bvalid = dmem_bvalid;
 
-  hsv_core #(
-      .HART_ID(0)
+  hsv_core_top #(
+      .HART_ID(HART_ID),
+	  .FETCH_BURST_LEN(FETCH_BURST_LEN)
   ) core (
       .clk_core(clk),
       .rst_core_n(rst_n),
