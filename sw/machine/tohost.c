@@ -53,7 +53,7 @@ void m_print_hex(unsigned value)
 
 void __attribute__((noreturn)) m_die(unsigned code)
 {
-	m_print_str("[m] cpu halted\n");
+	M_INFO("cpu halted\n");
 
 	__sync_synchronize();
 	tohost = (code << 1) | 1;
@@ -61,4 +61,22 @@ void __attribute__((noreturn)) m_die(unsigned code)
 
 	while (1)
 		asm volatile ("wfi");
+}
+
+void m_handle_semihosting(void)
+{
+	unsigned call = m_trap_context.a0;
+	unsigned arg1 = m_trap_context.a1;
+	unsigned arg2 = m_trap_context.a2;
+	unsigned arg3 = m_trap_context.a3;
+	unsigned arg4 = m_trap_context.a4;
+
+	switch (call) {
+		default:
+			M_LOG("unknown call code: ");
+			m_print_hex(call);
+			m_print_str("\n");
+
+			m_bad_trap();
+	}
 }

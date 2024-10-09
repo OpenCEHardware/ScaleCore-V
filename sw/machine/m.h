@@ -61,8 +61,20 @@ extern const struct insn_map_entry
 	const char *mnemonic;
 } m_insn_map[];
 
+enum rv_privilege
+{
+	USER_MODE       = 0b00,
+	SUPERVISOR_MODE = 0b01,
+	MACHINE_MODE    = 0b11,
+};
+
 void m_print_hex(unsigned value);
 void m_print_str(const char *str);
+
+#define M_INFO(msg) m_print_str("[m] " msg)
+#define M_LOG(msg)  do { m_print_str("[m] "); m_print_str(__func__); m_print_str("(): " msg); } while (0)
+
+void m_handle_semihosting(void);
 
 void __attribute__((noreturn)) m_die(unsigned code);
 void __attribute__((noreturn)) m_bad_trap(void);
