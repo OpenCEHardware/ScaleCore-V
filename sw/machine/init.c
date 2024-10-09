@@ -10,15 +10,22 @@ int u_main(void);
 void m_trap_entry(void);
 void __attribute__((noreturn)) m_trap_exit(void);
 
-int __attribute__((noreturn)) main()
+void __attribute__((constructor(1000))) m_init(void)
 {
+	memset(&m_trap_context, 0, sizeof m_trap_context);
 	write_csr(mtvec, (uintptr_t)m_trap_entry);
+
 
 	M_LOG("early init ok\n");
 
-	memset(&m_trap_context, 0, sizeof m_trap_context);
-	m_trap_context.pc = (uintptr_t)u_main;
-	asm volatile ("mv %0, sp" : "=r"(m_trap_context.sp));
+	unsigned jump_address;
 
-	m_trap_exit();
+	asm volatile (
+		"la   %0, in_user_mode\n"
+		"csrw mepc, %0\n"
+		"csrw mstatus, zero\n"
+		"mret\n"
+		"in_user_mode:\n"
+		: "=r" (jump_address)
+	);
 }
