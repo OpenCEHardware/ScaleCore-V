@@ -180,9 +180,27 @@ static void m_handle_illegal(void)
 			return;
 	} while (emulated);
 
-	if ((insn & MASK_CSRRW) == MATCH_CSRRW || (insn & MASK_CSRRWI) == MATCH_CSRRWI
-	 || (insn & MASK_CSRRC) == MATCH_CSRRC || (insn & MASK_CSRRCI) == MATCH_CSRRCI
+	int is_csr = 0;
+	int read_csr;
+	int write_csr;
+
+	int csr_src_non_zero = (insn & INSN_FIELD_RS1) == 0;
+	int csr_dst_non_zero = (insn & INSN_FIELD_RD) == 0;
+
+	if ((insn & MASK_CSRRW) == MATCH_CSRRW || (insn & MASK_CSRRWI) == MATCH_CSRRWI) {
+		is_csr = 1;
+		read_csr = csr_dst_non_zero;
+		write_csr = 1;
+	}
+
+	if ((insn & MASK_CSRRC) == MATCH_CSRRC || (insn & MASK_CSRRCI) == MATCH_CSRRCI
 	 || (insn & MASK_CSRRS) == MATCH_CSRRS || (insn & MASK_CSRRSI) == MATCH_CSRRSI) {
+		is_csr = 1;
+		read_csr = 1;
+		write_csr = csr_src_non_zero;
+	}
+
+	if (is_csr) {
 		int read_only;
 		switch ((insn & CSR_OPS_PROT_MASK) >> CSR_OPS_PROT_SHIFT) {
 			case CSR_RO:
@@ -203,14 +221,16 @@ static void m_handle_illegal(void)
 				break;
 			}
 
-		M_INFO("attempt to access non-existent or unauthorized CSR 0x");
+		M_INFO("attempt to ");
+		m_print_str(read_csr ? (write_csr ? "read and write" : "read") : "write");
+		m_print_str(" non-existent or unauthorized CSR 0x");
 		m_print_hex_bits(csr_num, 12);
 		m_print_str(" (");
 		m_print_str(csr_name);
 		m_print_str(", ");
 		m_print_chr(m_mode_char((insn & CSR_OPS_PRIV_MASK) >> CSR_OPS_PRIV_SHIFT));
 		m_print_str("-level ");
-		m_print_str(read_only ? "R/O" : "R/W");
+		m_print_str(read_only ? "read-only" : "read-write");
 		m_print_str(")\n");
 	} else {
 		const char *mnemonic = "<bad or custom opcode>";
