@@ -5,6 +5,7 @@ module hsv_core_mem_request
     input logic rst_core_n,
 
     input  logic flush,
+    input  logic flush_req,
     input  logic dmem_w_stall,
     input  logic dmem_ar_stall,
     input  logic dmem_aw_stall,
@@ -99,6 +100,13 @@ module hsv_core_mem_request
     if (request.mem_data.fence) begin
       read_stall  = ~fence_ready;
       write_stall = ~fence_ready;
+    end
+
+    // No further memory requests may start once a flush has been requested.
+    // This prevents potential AXI protocol violations.
+    if (flush_req) begin
+      read_stall  = 1;
+      write_stall = 1;
     end
 
     // Discard address bits [1:0], AXI transactions must be word-aligned

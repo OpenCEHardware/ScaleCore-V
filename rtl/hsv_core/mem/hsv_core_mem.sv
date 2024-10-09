@@ -142,6 +142,7 @@ module hsv_core_mem
       .rst_core_n,
 
       .flush,
+      .flush_req,
       .dmem_w_stall,
       .dmem_ar_stall,
       .dmem_aw_stall,
