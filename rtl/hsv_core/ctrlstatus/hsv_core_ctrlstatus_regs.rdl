@@ -103,15 +103,15 @@ addrmap hsv_core_ctrlstatus_regs
             we;
         } MPIE[7:7];
 
-        enum mpp_t {
-            mpp_u = 2'b00 { desc = "Previous privilege level was user mode"; };
-            mpp_m = 2'b11 { desc = "Previous privilege level was machine mode"; };
-        };
+        //enum mpp_t {
+        //    mpp_u = 2'b00 { desc = "Previous privilege level was user mode"; };
+        //    mpp_m = 2'b11 { desc = "Previous privilege level was machine mode"; };
+        //};
 
         field {
             desc = "M-mode: previous mode before trap (00: user, 11: machine)";
 
-            encode = mpp_t;
+            //encode = mpp_t;
 
             hw = rw;
             we;
@@ -130,15 +130,15 @@ addrmap hsv_core_ctrlstatus_regs
         default hw = na;
         default sw = r;
 
-        enum mxlen_t {
-            rv32  = 2'b01;
-            rv64  = 2'b10;
-            rv128 = 2'b11;
-        };
+        //enum mxlen_t {
+        //    rv32  = 2'b01;
+        //    rv64  = 2'b10;
+        //    rv128 = 2'b11;
+        //};
 
         field {
-            encode = mxlen_t;
-        } MXL[31:30] = mxlen_t::rv32;
+            //encode = mxlen_t;
+        } MXL[31:30] = /*mxlen_t::rv32*/ 2'b01;
 
         field {
             desc = "Atomic extension";

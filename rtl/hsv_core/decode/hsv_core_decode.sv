@@ -1,6 +1,5 @@
 module hsv_core_decode
-  import hsv_core_pkg::*;
-  import hsv_core_decode_pkg::*;
+  import hsv_core_pkg::*, hsv_core_decode_pkg::*;
 (
     input logic clk_core,
     input logic rst_core_n,

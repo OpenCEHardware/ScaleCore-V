@@ -1,11 +1,32 @@
-module hsv_core_top_flat
-#(
+module hsv_core_top_flat #(
     parameter logic [31:0] HART_ID         = 0,
     parameter int          FETCH_BURST_LEN = 4
-)
-(
-    input logic clk,
-    input logic rst_n,
+) (
+    input logic clk_core,
+    input logic rst_core_n,
+
+    // Unused imem write interfaces
+    // This is required by Platform Designer
+
+    input  logic        imem_awready,
+    output logic        imem_awvalid,
+    output logic [ 7:0] imem_awid,
+    output logic [ 7:0] imem_awlen,
+    output logic [ 2:0] imem_awsize,
+    output logic [ 1:0] imem_awburst,
+    output logic [ 2:0] imem_awprot,
+    output logic [31:0] imem_awaddr,
+
+    input  logic        imem_wready,
+    output logic        imem_wvalid,
+    output logic [31:0] imem_wdata,
+    output logic        imem_wlast,
+    output logic [ 3:0] imem_wstrb,
+
+    output logic       imem_bready,
+    input  logic       imem_bvalid,
+    input  logic [7:0] imem_bid,
+    input  logic [1:0] imem_bresp,
 
     input  logic        imem_arready,
     output logic        imem_arvalid,
@@ -65,6 +86,21 @@ module hsv_core_top_flat
   axib_if imem ();
   axil_if dmem ();
 
+  assign imem_awid = '0;
+  assign imem_awlen = '0;
+  assign imem_awsize = '0;
+  assign imem_awprot = '0;
+  assign imem_awaddr = '0;
+  assign imem_awburst = '0;
+  assign imem_awvalid = 0;
+
+  assign imem_wdata = '0;
+  assign imem_wlast = 0;
+  assign imem_wstrb = '0;
+  assign imem_wvalid = 0;
+
+  assign imem_bready = 0;
+
   assign imem_arid = imem.s.arid;
   assign imem_arlen = imem.s.arlen;
   assign imem_arsize = imem.s.arsize;
@@ -116,10 +152,10 @@ module hsv_core_top_flat
 
   hsv_core_top #(
       .HART_ID(HART_ID),
-	  .FETCH_BURST_LEN(FETCH_BURST_LEN)
+      .FETCH_BURST_LEN(FETCH_BURST_LEN)
   ) core (
-      .clk_core(clk),
-      .rst_core_n(rst_n),
+      .clk_core,
+      .rst_core_n,
       .imem(imem.m),
       .dmem(dmem.m),
       .irq_core(0),

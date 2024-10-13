@@ -61,9 +61,6 @@ module hsv_core_commit
   logic alu_trap, foo_trap, mem_trap, branch_trap, ctrlstatus_trap;
   commit_action_bits_t action, alu_action, foo_action, mem_action, branch_action, ctrlstatus_action;
 
-  // Extract individual flush/trap/wfi/etc bits
-  assign action = used_data.action;
-
   assign alu_action = alu_data.action;
   assign foo_action = foo_data.action;
   assign mem_action = mem_data.action;
@@ -123,6 +120,9 @@ module hsv_core_commit
   assign foo_committable_data = foo_committable ? foo_data : '0;
 
   commit_data_t used_data;
+
+  // Extract individual flush/trap/wfi/etc bits
+  assign action = used_data.action;
 
   assign used_data
   = alu_committable_data

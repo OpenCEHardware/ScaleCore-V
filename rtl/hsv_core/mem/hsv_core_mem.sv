@@ -213,11 +213,11 @@ module hsv_core_mem
 
       .dmem_r_valid(dmem.rvalid),
       .dmem_r_data (dmem.rdata),
-      .dmem_r_resp (dmem.rresp),
+      .dmem_r_resp (axi_resp_t'(dmem.rresp)),
       .dmem_r_ready(dmem.rready),
 
       .dmem_b_valid(dmem.bvalid),
-      .dmem_b_resp (dmem.bresp),
+      .dmem_b_resp (axi_resp_t'(dmem.bresp)),
       .dmem_b_ready(dmem.bready),
 
       .commit_mem,

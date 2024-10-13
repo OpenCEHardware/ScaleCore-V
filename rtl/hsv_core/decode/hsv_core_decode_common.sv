@@ -1,6 +1,5 @@
 module hsv_core_decode_common
-  import hsv_core_pkg::*;
-  import hsv_core_decode_pkg::*;
+  import hsv_core_pkg::*, hsv_core_decode_pkg::*;
 (
     input  fetch_data_t    fetch_data,
     output decode_common_t common

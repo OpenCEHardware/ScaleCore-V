@@ -1,6 +1,5 @@
 module hsv_core_decode_foo
-  import hsv_core_pkg::*;
-  import hsv_core_decode_pkg::*;
+  import hsv_core_pkg::*, hsv_core_decode_pkg::*;
 (
     input  word       insn,
     output foo_data_t foo_data,

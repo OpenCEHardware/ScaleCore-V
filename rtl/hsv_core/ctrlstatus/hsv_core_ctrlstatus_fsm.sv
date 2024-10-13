@@ -1,6 +1,5 @@
 module hsv_core_ctrlstatus_fsm
-  import hsv_core_pkg::*;
-  import hsv_core_ctrlstatus_regs_pkg::*;
+  import hsv_core_pkg::*, hsv_core_ctrlstatus_regs_pkg::*;
 (
     input logic clk_core,
     input logic rst_core_n,

@@ -140,12 +140,12 @@ int simulation::run()
 		top.dmem_arready = 0;
 		top.dmem_awready = 0;
 
-		top.clk = 0;
-		top.rst_n = 0;
+		top.clk_core = 0;
+		top.rst_core_n = 0;
 
 		this->run_cycles(2);
 
-		top.rst_n = 1;
+		top.rst_core_n = 1;
 		this->top->eval();
 	}
 
@@ -326,7 +326,7 @@ void simulation::run_cycles(unsigned cycles)
 #endif
 
 		this->time_++;
-		top.clk = 0;
+		top.clk_core = 0;
 		top.eval();
 
 #if VM_TRACE
@@ -335,7 +335,7 @@ void simulation::run_cycles(unsigned cycles)
 #endif
 
 		this->time_++;
-		top.clk = 1;
+		top.clk_core = 1;
 		top.eval();
 	}
 }

@@ -1,6 +1,5 @@
 module hsv_core_ctrlstatus
-  import hsv_core_pkg::*;
-  import hsv_core_ctrlstatus_regs_pkg::*;
+  import hsv_core_pkg::*, hsv_core_ctrlstatus_regs_pkg::*;
 #(
     parameter word HART_ID = 0
 ) (

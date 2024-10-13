@@ -205,7 +205,7 @@ module hsv_core_top
   );
 
   hsv_core_ctrlstatus #(
-      .HART_ID
+      .HART_ID(HART_ID)
   ) ctrlstatus (
       .clk_core,
       .rst_core_n,

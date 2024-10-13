@@ -1,6 +1,5 @@
 module hsv_core_decode_mem
-  import hsv_core_pkg::*;
-  import hsv_core_decode_pkg::*;
+  import hsv_core_pkg::*, hsv_core_decode_pkg::*;
 (
     input  word       insn,
     output mem_data_t mem_data,
