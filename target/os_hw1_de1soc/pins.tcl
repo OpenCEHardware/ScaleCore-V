@@ -1,5 +1,5 @@
 set_location_assignment PIN_AF14 -to clk
-set_location_assignment PIN_AA30 -to reset
+set_location_assignment PIN_Y16 -to reset
 set_location_assignment PIN_AC12 -to switcher[1]
 set_location_assignment PIN_AB12 -to switcher[0]
 set_location_assignment PIN_AH28 -to minutesDisplay0[6]
