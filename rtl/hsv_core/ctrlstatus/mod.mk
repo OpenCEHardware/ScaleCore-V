@@ -6,8 +6,8 @@ define core/hsv_core_ctrlstatus
   $(this)/rtl_top := hsv_core_ctrlstatus
   $(this)/rtl_files := \
     hsv_core_ctrlstatus.sv \
-    hsv_core_ctrlstatus_fsm.sv \
     hsv_core_ctrlstatus_counters.sv \
+    hsv_core_ctrlstatus_global_fsm.sv \
     hsv_core_ctrlstatus_readwrite.sv
 endef
 

@@ -93,7 +93,7 @@ module hsv_core_ctrlstatus
   assign flush_ack_raising = &flush_acks;
   assign flush_ack_falling = |flush_acks;
 
-  hsv_core_ctrlstatus_fsm global_fsm (
+  hsv_core_ctrlstatus_global_fsm global_fsm (
       .clk_core,
       .rst_core_n,
       .irq,

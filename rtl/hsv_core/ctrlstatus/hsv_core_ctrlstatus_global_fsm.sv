@@ -1,4 +1,4 @@
-module hsv_core_ctrlstatus_fsm
+module hsv_core_ctrlstatus_global_fsm
   import hsv_core_pkg::*, hsv_core_ctrlstatus_regs_pkg::*;
 (
     input logic clk_core,
