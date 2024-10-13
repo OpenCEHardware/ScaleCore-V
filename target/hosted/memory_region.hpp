@@ -49,7 +49,7 @@ class owned_memory_region : public memory_region
 {
 	public:
 		inline owned_memory_region(simulation &sim, unsigned base, unsigned len)
-		: memory_region{sim, base, new char[len], len}
+		: memory_region{sim, base, new char[(len + 7) & -4], len}
 		{}
 
 		inline ~owned_memory_region()

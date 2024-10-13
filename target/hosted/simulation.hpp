@@ -46,7 +46,7 @@ class memory_mapped
 		{
 			address -= this->base;
 
-			if (address + sizeof data > this->len)
+			if (address >= this->len + sizeof data)
 				return false;
 
 			return this->read_relative(address, data);
