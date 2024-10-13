@@ -36,4 +36,6 @@ define core/hsv_core_top_flat
 
   $(this)/rtl_top   := hsv_core_top_flat
   $(this)/rtl_files := hsv_core_top_flat.sv
+
+  $(this)/qsys_ip_file := hsv_core_hw.tcl
 endef

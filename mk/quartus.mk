@@ -72,6 +72,9 @@ define target/quartus/rules
 	$$(shell echo Quartus project file: $$(quartus_qpf) >&2)
 	$$(if $$(enable_gui),$$(call run,GUI) $$(quartus_run) $$(quartus_top).qpf)
 
+  $$(obj)/qsys: | $$(obj)
+	@mkdir -p $$@
+
   $$(obj)/asm.stamp: $$(obj)/sta.stamp
 	$$(call run,ASM) $$(quartus_run)_asm $$(quartus_top)
 	@touch $$@
@@ -121,20 +124,62 @@ define target/quartus/rules
 	assignment_list "Constraint files" SDC_FILE $$(addprefix $$(quartus_src)/,$$(quartus_sdc)) && \
 	assignment_list "IPs" QIP_FILE $$(addprefix $$(quartus_src)/,$$(quartus_qip)) && \
 	assignment_list "Platform IPs" QIP_FILE $$(quartus_plat_qip) && \
-	assignment_list "Platforms" QSYS_FILE $$(addprefix $$(quartus_src)/,$$(quartus_qsys)) && \
+	assignment_list "Platforms" QSYS_FILE $$(notdir $$(quartus_qsys)) && \
 	for x in $$(quartus_tcl); do printf "\n#\n# TCL file %s\n#\n" "$$$$x"; cat "$$(quartus_src)/$$$$x"; done
 
   $(call target_entrypoint,$$(rule_top_path)/quartus $(patsubst %,$$(obj)/%.stamp,map fit sta asm))
 
-  $$(foreach plat,$$(quartus_platforms),$$(eval $$(call quartus_qsys_rules,$$(plat))))
+  added_qsys_deps :=
+
+  $$(foreach plat,$$(quartus_platforms), \
+    $$(eval $$(call quartus_qsys_platform_rules,$$(plat))) \
+    $$(foreach qsys_dep,$$(core_info/$$(plat)/qsys_deps), \
+      $$(if $$(filter $$(qsys_dep),$$(added_qsys_deps)),, \
+        $$(eval $$(call quartus_qsys_hwip_rules,$$(qsys_dep))) \
+        $$(eval added_qsys_deps += $$(qsys_dep)))))
 endef
 
-define quartus_qsys_rules
+define quartus_qsys_platform_rules
   qip_file := $$(obj)/$$(call quartus_plat_path,$(1))
-  qsys_file := $$(call core_paths,$(1),qsys_platform)
+  qsys_src_file := $$(call core_paths,$(1),qsys_platform)
+  qsys_dst_file := $$(notdir $$(qsys_src_file))
+  qsys_hwip_files := $$(addprefix $$(obj)/,$$(notdir $$(foreach dep,$$(core_info/$(1)/qsys_deps),$$(call core_paths,$$(dep),qsys_ip_file))))
 
-  $$(qip_file): qsys_file := $$(qsys_file)
-  $$(qip_file): $$(call core_stamp,$(1)) $$(qsys_file)
-	$$(call run,QSYS,$$(qsys_file)) $$(QSYS_GENERATE) \
-		-syn --part=$$(quartus_device) --output-directory=$$(obj)/qsys/$(1) $$(qsys_file)
+  $$(obj)/$$(qsys_dst_file): $$(qsys_src_file) $$(call core_stamp,$(1)) | $$(obj)/qsys
+	@cp -T -- $$< $$@
+
+  $$(qip_file): qsys_dst_file := $$(qsys_dst_file)
+  $$(qip_file): $$(obj)/$$(qsys_dst_file) $$(qsys_hwip_files)
+	$$(call run,QSYS,$$(qsys_file)) cd $$(obj) && $$(QSYS_GENERATE) \
+		-syn --part=$$(quartus_device) --output-directory=qsys/$$(basename $$(qsys_dst_file)) $$(qsys_dst_file)
+endef
+
+define quartus_qsys_hwip_rules
+  tcl_src_file := $$(call require_core_paths,$(1),qsys_ip_file)
+  tcl_dst_file := $$(obj)/$$(notdir $$(tcl_src_file))
+  tcl_rtl_deps := $$(foreach dep,$$(dep_tree/$(1)),$$(call core_paths,$$(dep),rtl_files))
+
+  $$(tcl_dst_file): $$(tcl_src_file) $$(tcl_rtl_deps) $$(call core_stamp,$(1)) | $$(obj)/qsys
+	$$(call run,HWTCL,$$(core_info/$(1)/path)) \
+	cp -T -- $$< $$@ && \
+	exec >>$$@ && \
+	echo && \
+	echo "# Source filelist" && \
+	add_src_file() { \
+		src_path="$$$$1"; \
+		ext="$$$$2"; \
+		src_basename="$$$$(basename "$$$$src_path")"; \
+		top=; \
+		if [ "$$$${src_basename%.*}" = "$$(core_info/$(1)/rtl_top)" ]; then \
+			top=" TOP_LEVEL_FILE"; \
+		fi; \
+		echo add_fileset_file "$$$$(basename "$$$$src_path")" "$$$$ext" PATH "$$$$src_path$$$$top"; \
+	} && \
+	for x in $$(foreach dep,$$(dep_tree/$(1)),$$(call core_paths,$$(dep),rtl_files)); do \
+		case $$$${x##*.} in \
+			[Ss][Vv]) ext=SYSTEM_VERILOG ;; \
+			*)        echo "Unknown file extension for qsys IP: $$$$x" >&2; exit 1 ;; \
+		esac && \
+		add_src_file "$$(quartus_src)/$$$$x" "$$$$ext"; \
+	done
 endef
