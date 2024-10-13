@@ -6,7 +6,7 @@ define core
   $(this)/altera_family := Cyclone V
 
   $(this)/sdc_files     := timing.sdc
-  $(this)/qsf_files     := pins.tcl
+  $(this)/qsf_files     := rom.tcl pins.tcl
   $(this)/qsys_deps     := hsv_core_top_flat
   $(this)/qsys_platform := cpu.qsys
 endef
