@@ -206,6 +206,18 @@ addrmap hsv_core_ctrlstatus_regs
     } MISA @ 0x3010;
 
     reg {
+        name = "Machine interrupt enable";
+        desc = "Interrupt enable bits";
+
+        field {
+            desc = "Machine-level external interrupt enable";
+
+            hw = r;
+            sw = rw;
+        } MEIE[11:11] = 0;
+    } MIE @ 0x3040;
+
+    reg {
         name = "Machine trap-handler base address";
         desc = "Holds trap vector configuration";
 
@@ -268,12 +280,14 @@ addrmap hsv_core_ctrlstatus_regs
 
     reg {
         name = "Machine interrupt pending";
-        desc = "";
+        desc = "Information on pending interrupts";
 
         field {
-            hw = na;
-            sw = rw;
-        } VALUE[31:0];
+            desc = "Machine-level external interrupt pending";
+
+            hw = rw;
+            sw = r;
+        } MEIP[11:11];
     } MIP @ 0x3440;
 
     // Machine configuration

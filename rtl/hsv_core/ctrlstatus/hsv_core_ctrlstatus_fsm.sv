@@ -21,6 +21,7 @@ module hsv_core_ctrlstatus_fsm
 
     input  hsv_core_ctrlstatus_regs__out_t         regs_i,
     output hsv_core_ctrlstatus_regs__MSTATUS__in_t mstatus_o,
+    output hsv_core_ctrlstatus_regs__MIP__in_t     mip_o,
     output hsv_core_ctrlstatus_regs__MEPC__in_t    mepc_o,
     output hsv_core_ctrlstatus_regs__MCAUSE__in_t  mcause_o,
     output hsv_core_ctrlstatus_regs__MTVAL__in_t   mtval_o,
@@ -51,6 +52,8 @@ module hsv_core_ctrlstatus_fsm
   localparam int McausePadBits = $bits(mcause_o.CODE.next) - $bits(ctrl_trap_cause);
 
   assign is_trap = ctrl_trap | take_irq;
+
+  assign mip_o.MEIP.next = irq;
 
   assign mepc_o.PC.we = mode_switch & ~ctrl_mode_return;
   assign mepc_o.PC.next = ctrl_next_pc[$bits(ctrl_next_pc)-1:MepcPadBits];
@@ -159,7 +162,10 @@ module hsv_core_ctrlstatus_fsm
 
   always_ff @(posedge clk_core) begin
     take_irq <= (ctrl_begin_irq & ~ctrl_flush_begin) | (wait_for_irq & interrupt_enable);
-    irq_pending <= irq & interrupt_enable;
+
+    // "Higher-privilege-level code can use separate per-interrupt enable bits to disable
+    // selected higher-privilege-mode interrupts before ceding control to a lower-privilege mode."
+    irq_pending <= regs_i.MIP.MEIP.value & regs_i.MIE.MEIE.value & interrupt_enable;
 
     if (jump) flush_target <= jump_address;
   end

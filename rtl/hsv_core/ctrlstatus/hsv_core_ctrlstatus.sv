@@ -114,6 +114,7 @@ module hsv_core_ctrlstatus
 
       .regs_i(regs_out),
       .mstatus_o(regs_in.MSTATUS),
+      .mip_o(regs_in.MIP),
       .mepc_o(regs_in.MEPC),
       .mcause_o(regs_in.MCAUSE),
       .mtval_o(regs_in.MTVAL),
