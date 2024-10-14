@@ -143,27 +143,31 @@ module hsv_core_commit
   logic token_clear;
   assign token_clear = flush_ack & !flush_req;
 
+  always_ff @(posedge clk_core or negedge rst_core_n)
+    if (~rst_core_n) begin
+      flush_ack <= 1;
+
+      ctrl_trap <= 0;
+      ctrl_next_pc <= '0;
+      ctrl_wait_irq <= 0;
+      ctrl_mode_return <= 0;
+    end else begin
+      flush_ack <= flush_req;
+
+      ctrl_trap <= action.trap;
+      ctrl_wait_irq <= action.wait_irq;
+      ctrl_mode_return <= action.mode_return;
+
+      if (token_clear) ctrl_next_pc <= flush_target;
+      else if (general_commit) ctrl_next_pc <= used_data.next_pc;
+    end
+
   always_ff @(posedge clk_core) begin
-
-    if (token_enable) token <= token + 1;
-
-    ctrl_trap <= action.trap;
-    ctrl_wait_irq <= action.wait_irq;
     ctrl_trap_cause <= used_data.exception_cause;
     ctrl_trap_value <= used_data.exception_value;
-    ctrl_mode_return <= action.mode_return;
 
-    if (general_commit) ctrl_next_pc <= used_data.next_pc;
-
-    if (token_clear) begin
-      token <= '0;
-      ctrl_next_pc <= flush_target;
-    end
-  end
-
-  always_ff @(posedge clk_core or negedge rst_core_n) begin
-    if (~rst_core_n) flush_ack <= 1;
-    else flush_ack <= flush_req;
+    if (token_clear) token <= '0;
+    else if (token_enable) token <= token + 1;
   end
 
 endmodule
