@@ -154,11 +154,8 @@ module hsv_core_top_flat #(
       .HART_ID(HART_ID),
       .FETCH_BURST_LEN(FETCH_BURST_LEN)
   ) core (
-      .clk_core,
-      .rst_core_n,
       .imem(imem.m),
       .dmem(dmem.m),
-      .irq_core(0),
       .*
   );
 
