@@ -57,7 +57,7 @@ module hsv_core_mem_response
   assign writes_to_commit_down = write_balance_up;
 
   assign discard_responses_up = write_balance_up;
-  assign discard_responses_down = pending_writes_down;
+  assign discard_responses_down = pending_writes_down & (discard_responses != '0);
 
   assign response_stall = commit_stall | ~completed;
 

@@ -102,12 +102,12 @@ module hsv_core_mem_request
       write_stall = ~fence_ready;
     end
 
-    // No further memory requests may start once a flush has been requested.
+    // No further memory reads may start once a flush has been requested.
     // This prevents potential AXI protocol violations.
-    if (flush_req) begin
-      read_stall  = 1;
-      write_stall = 1;
-    end
+    if (flush_req) read_stall = 1;
+
+    // After flush req, permit only as many writes as needed to match the commit count
+    if (flush_req & (write_balance <= 0)) write_stall = 1;
 
     // Discard address bits [1:0], AXI transactions must be word-aligned
     word_address = request.address;
