@@ -22,6 +22,8 @@ static char m_mode_char(enum rv_privilege mode);
 #define SEMIHOSTING_MAGIC_PRE  0x01f01013 // sll zero, zero, 31
 #define SEMIHOSTING_MAGIC_POST 0x40705013 // sra zero, zero, 7
 
+void timer_isr(void);
+
 void m_handle_trap(void)
 {
 	if (m_in_trap) {
@@ -38,6 +40,10 @@ void m_handle_trap(void)
 
 		case CAUSE_BREAKPOINT:
 			m_handle_breakpoint();
+			break;
+
+		case MCAUSE_INTERRUPT | IRQ_M_EXT:
+			timer_isr();
 			break;
 
 		default:

@@ -13,8 +13,9 @@ void __attribute__((noreturn)) m_trap_exit(void);
 void __attribute__((constructor(1000))) m_init(void)
 {
 	memset(&m_trap_context, 0, sizeof m_trap_context);
-	write_csr(mtvec, (uintptr_t)m_trap_entry);
 
+	write_csr(mtvec, (uintptr_t)m_trap_entry);
+	write_csr(mie, MIP_MEIP);
 
 	M_LOG("early init ok\n");
 
