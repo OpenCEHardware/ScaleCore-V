@@ -91,37 +91,37 @@ static unsigned m_read_reg(int reg)
 static void m_write_reg(int reg, unsigned value)
 {
 	switch (reg) {
-		case 1:  m_trap_context.x1 = value;
-		case 2:  m_trap_context.x2 = value;
-		case 3:  m_trap_context.x3 = value;
-		case 4:  m_trap_context.x4 = value;
-		case 5:  m_trap_context.x5 = value;
-		case 6:  m_trap_context.x6 = value;
-		case 7:  m_trap_context.x7 = value;
-		case 8:  m_trap_context.x8 = value;
-		case 9:  m_trap_context.x9 = value;
-		case 10: m_trap_context.x10 = value;
-		case 11: m_trap_context.x11 = value;
-		case 12: m_trap_context.x12 = value;
-		case 13: m_trap_context.x13 = value;
-		case 14: m_trap_context.x14 = value;
-		case 15: m_trap_context.x15 = value;
-		case 16: m_trap_context.x16 = value;
-		case 17: m_trap_context.x17 = value;
-		case 18: m_trap_context.x18 = value;
-		case 19: m_trap_context.x19 = value;
-		case 20: m_trap_context.x20 = value;
-		case 21: m_trap_context.x21 = value;
-		case 22: m_trap_context.x22 = value;
-		case 23: m_trap_context.x23 = value;
-		case 24: m_trap_context.x24 = value;
-		case 25: m_trap_context.x25 = value;
-		case 26: m_trap_context.x26 = value;
-		case 27: m_trap_context.x27 = value;
-		case 28: m_trap_context.x28 = value;
-		case 29: m_trap_context.x29 = value;
-		case 30: m_trap_context.x30 = value;
-		case 31: m_trap_context.x31 = value;
+		case 1:  m_trap_context.x1 = value; break;
+		case 2:  m_trap_context.x2 = value; break;
+		case 3:  m_trap_context.x3 = value; break;
+		case 4:  m_trap_context.x4 = value; break;
+		case 5:  m_trap_context.x5 = value; break;
+		case 6:  m_trap_context.x6 = value; break;
+		case 7:  m_trap_context.x7 = value; break;
+		case 8:  m_trap_context.x8 = value; break;
+		case 9:  m_trap_context.x9 = value; break;
+		case 10: m_trap_context.x10 = value; break;
+		case 11: m_trap_context.x11 = value; break;
+		case 12: m_trap_context.x12 = value; break;
+		case 13: m_trap_context.x13 = value; break;
+		case 14: m_trap_context.x14 = value; break;
+		case 15: m_trap_context.x15 = value; break;
+		case 16: m_trap_context.x16 = value; break;
+		case 17: m_trap_context.x17 = value; break;
+		case 18: m_trap_context.x18 = value; break;
+		case 19: m_trap_context.x19 = value; break;
+		case 20: m_trap_context.x20 = value; break;
+		case 21: m_trap_context.x21 = value; break;
+		case 22: m_trap_context.x22 = value; break;
+		case 23: m_trap_context.x23 = value; break;
+		case 24: m_trap_context.x24 = value; break;
+		case 25: m_trap_context.x25 = value; break;
+		case 26: m_trap_context.x26 = value; break;
+		case 27: m_trap_context.x27 = value; break;
+		case 28: m_trap_context.x28 = value; break;
+		case 29: m_trap_context.x29 = value; break;
+		case 30: m_trap_context.x30 = value; break;
+		case 31: m_trap_context.x31 = value; break;
 		default: break;
 	}
 }
