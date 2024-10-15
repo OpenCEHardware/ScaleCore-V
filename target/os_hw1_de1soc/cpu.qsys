@@ -360,7 +360,7 @@
   <parameter name="resetSynchronousEdges" value="NONE" />
  </module>
  <module name="cpu" kind="hsv_core" version="1.0" enabled="1">
-  <parameter name="AUTO_IRQ_INTERRUPTS_USED" value="0" />
+  <parameter name="AUTO_IRQ_INTERRUPTS_USED" value="1" />
   <parameter name="FETCH_BURST_LEN" value="4" />
   <parameter name="HART_ID" value="0" />
  </module>
@@ -671,6 +671,9 @@
  <connection kind="clock" version="23.1" start="clk_0.clk" end="pio_key_2.clk" />
  <connection kind="clock" version="23.1" start="clk_0.clk" end="cpu.clk" />
  <connection kind="clock" version="23.1" start="clk_0.clk" end="memoria.clk1" />
+ <connection kind="interrupt" version="23.1" start="cpu.irq" end="timer.irq">
+  <parameter name="irqNumber" value="0" />
+ </connection>
  <connection
    kind="reset"
    version="23.1"
