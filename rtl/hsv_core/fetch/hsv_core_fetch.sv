@@ -26,13 +26,24 @@ module hsv_core_fetch
     FETCH_2   // Two bursts are pending, wait for one of them to complete
   } state_t;
 
-  word burst_base, pc, pc_increment;
-  logic fetch_beat, fetch_start, fetch_end;
-  state_t state, next_state;
+  typedef struct packed {
+    logic      last;
+    axi_resp_t resp;
+    word       data;
+  } fetch_read_t;
 
-  assign fetch_end = fetch_beat & imem.rlast;
-  assign fetch_beat = imem.rvalid & imem.rready;
+  word burst_base, pc, pc_increment;
+  logic fetch_beat, fetch_start, fetch_end, fetch_ready, fetch_valid;
+  state_t state, next_state;
+  fetch_read_t fetch_read_in, fetch_read_out;
+
+  assign fetch_end = fetch_beat & fetch_read_out.last;
+  assign fetch_beat = fetch_valid & fetch_ready;
   assign fetch_start = imem.arvalid & imem.arready;
+
+  assign fetch_read_in.data = imem.rdata;
+  assign fetch_read_in.last = imem.rlast;
+  assign fetch_read_in.resp = axi_resp_t'(imem.rresp);
 
   // We disable all write signals since imem is read-only
 
@@ -61,13 +72,34 @@ module hsv_core_fetch
   // We request 4 instructions in advance per beat (prefetching)
   assign imem.arlen = ($bits(imem.arlen))'(BURST_LEN - 1);
 
-  assign valid_o = imem.rvalid;
-  assign imem.rready = ready_i;
+  assign valid_o = fetch_valid;
+  assign fetch_ready = ready_i;
 
   assign fetch_data.pc = pc;
-  assign fetch_data.insn = imem.rdata;
-  assign fetch_data.fault = is_axi_error(axi_resp_t'(imem.rresp));
+  assign fetch_data.insn = fetch_read_out.data;
+  assign fetch_data.fault = is_axi_error(fetch_read_out.resp);
   assign fetch_data.pc_increment = pc_increment;
+
+  // Without this FIFO, fetch and memory loads can deadlock one another,
+  // depending on memory interconnect implementation. This was observed
+  // on a Platform Designer system with a shared imem/dmem on-chip RAM.
+  hs_fifo #(
+      .WIDTH($bits(fetch_read_t)),
+      .DEPTH(1 << $clog2(2 * BURST_LEN + 1))
+  ) anti_contention_fifo (
+      .clk_core,
+      .rst_core_n,
+
+      .flush(0),
+
+      .in(fetch_read_in),
+      .ready_o(imem.rready),
+      .valid_i(imem.rvalid),
+
+      .out(fetch_read_out),
+      .ready_i(fetch_ready),
+      .valid_o(fetch_valid)
+  );
 
   always_comb begin
     flush_ack = 0;
