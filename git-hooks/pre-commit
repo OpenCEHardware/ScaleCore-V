@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-set -e
-
-git diff --cached --name-only --diff-filter=AM | grep '\.sv$' | while read -r file; do
-  verible-verilog-lint "$file" || exit 1
-  verible-verilog-format --inplace "$file" || exit 1
-  git add "$file"
-done
