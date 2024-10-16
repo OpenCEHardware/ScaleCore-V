@@ -83,8 +83,7 @@ module hsv_core_top_flat #(
     input logic irq_core
 );
 
-  axib_if imem ();
-  axil_if dmem ();
+  axib_if dmem (), imem ();
 
   assign imem_awid = '0;
   assign imem_awlen = '0;
@@ -117,36 +116,39 @@ module hsv_core_top_flat #(
   assign imem.s.rresp = imem_rresp;
   assign imem.s.rvalid = imem_rvalid;
 
-  assign dmem_arid = '0;
-  assign dmem_arlen = '0;
-  assign dmem_arsize = 3'b010;
+  assign dmem_arid = dmem.s.arid;
+  assign dmem_arlen = dmem.s.arlen;
+  assign dmem_arsize = dmem.s.arsize;
   assign dmem_araddr = dmem.s.araddr;
   assign dmem_arprot = 3'b010;
-  assign dmem_arburst = 2'b01;
+  assign dmem_arburst = dmem.s.arburst;
   assign dmem_arvalid = dmem.s.arvalid;
   assign dmem.s.arready = dmem_arready;
 
-  assign dmem_awid = '0;
-  assign dmem_awlen = '0;
-  assign dmem_awsize = 3'b010;
+  assign dmem_awid = dmem.s.awid;
+  assign dmem_awlen = dmem.s.awlen;
+  assign dmem_awsize = dmem.s.awsize;
   assign dmem_awaddr = dmem.s.awaddr;
   assign dmem_awprot = 3'b010;
-  assign dmem_awburst = 2'b01;
+  assign dmem_awburst = dmem.s.awburst;
   assign dmem_awvalid = dmem.s.awvalid;
   assign dmem.s.awready = dmem_awready;
 
   assign dmem_wdata = dmem.s.wdata;
-  assign dmem_wlast = 1;
+  assign dmem_wlast = dmem.s.wlast;
   assign dmem_wstrb = dmem.s.wstrb;
   assign dmem_wvalid = dmem.s.wvalid;
   assign dmem.s.wready = dmem_wready;
 
   assign dmem_rready = dmem.s.rready;
+  assign dmem.s.rid = dmem_rid;
   assign dmem.s.rdata = dmem_rdata;
+  assign dmem.s.rlast = dmem_rlast;
   assign dmem.s.rresp = dmem_rresp;
   assign dmem.s.rvalid = dmem_rvalid;
 
   assign dmem_bready = dmem.s.bready;
+  assign dmem.s.bid = dmem_bid;
   assign dmem.s.bresp = dmem_bresp;
   assign dmem.s.bvalid = dmem_bvalid;
 

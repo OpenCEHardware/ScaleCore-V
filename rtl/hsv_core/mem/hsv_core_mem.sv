@@ -20,7 +20,7 @@ module hsv_core_mem
     input logic      commit_mem,
     input insn_token commit_token,
 
-    axil_if.m dmem
+    axib_if.m dmem
 );
 
   logic dmem_ar_stall, dmem_aw_stall, dmem_w_stall;
@@ -31,6 +31,20 @@ module hsv_core_mem
 
   logic response_fifo_in_ready, response_fifo_in_valid, response_fifo_in_stall;
   logic response_fifo_out_ready, response_fifo_out_valid, response_fifo_out_stall;
+
+  // Burst signals - unused by current implementation
+
+  assign dmem.arid = '0;
+  assign dmem.arlen = '0;
+  assign dmem.arsize = AXI_SIZE_4;
+  assign dmem.arburst = AXI_BURST_INCR;
+
+  assign dmem.awid = '0;
+  assign dmem.awlen = '0;
+  assign dmem.awsize = AXI_SIZE_4;
+  assign dmem.awburst = AXI_BURST_INCR;
+
+  assign dmem.wlast = 1;
 
   // The request and response modules share three counters:
   //

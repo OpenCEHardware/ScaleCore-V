@@ -8,7 +8,7 @@ module hsv_core_top
     input logic rst_core_n,
 
     axib_if.m imem,
-    axil_if.m dmem,
+    axib_if.m dmem,
 
     input logic irq_core
 );
