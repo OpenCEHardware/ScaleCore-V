@@ -83,7 +83,7 @@ module hsv_core_fetch
   // Without this FIFO, fetch and memory loads can deadlock one another,
   // depending on memory interconnect implementation. This was observed
   // on a Platform Designer system with a shared imem/dmem on-chip RAM.
-  hs_fifo #(
+  hsv_core_fifo #(
       .WIDTH($bits(fetch_read_t)),
       .DEPTH(1 << $clog2(2 * BURST_LEN + 1))
   ) anti_contention_fifo (

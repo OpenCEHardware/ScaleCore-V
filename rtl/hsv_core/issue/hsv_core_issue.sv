@@ -147,7 +147,7 @@ module hsv_core_issue
 
   // Third stage: Buffering pipelines (one skid buffer per PU in exec-mem)
   // ALU
-  hs_skid_buffer #(
+  hsv_core_skid_buffer #(
       .WIDTH($bits(alu_data))
   ) issue_2_alu (
       .clk_core,
@@ -165,7 +165,7 @@ module hsv_core_issue
   );
 
   // Foo
-  hs_skid_buffer #(
+  hsv_core_skid_buffer #(
       .WIDTH($bits(foo_data))
   ) issue_2_foo (
       .clk_core,
@@ -183,7 +183,7 @@ module hsv_core_issue
   );
 
   // Memory
-  hs_skid_buffer #(
+  hsv_core_skid_buffer #(
       .WIDTH($bits(mem_data))
   ) issue_2_memory (
       .clk_core,
@@ -201,7 +201,7 @@ module hsv_core_issue
   );
 
   // Branch
-  hs_skid_buffer #(
+  hsv_core_skid_buffer #(
       .WIDTH($bits(branch_data))
   ) issue_2_branch (
       .clk_core,
@@ -219,7 +219,7 @@ module hsv_core_issue
   );
 
   // Control-Status
-  hs_skid_buffer #(
+  hsv_core_skid_buffer #(
       .WIDTH($bits(ctrlstatus_data))
   ) issue_2_ctrlstatus (
       .clk_core,

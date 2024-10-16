@@ -49,7 +49,7 @@ module hsv_core_foo
   //
   // Every execution unit has a skid buffer that acts as a buffer between
   // itself and the commit stage. You should usually leave it as-is.
-  hs_skid_buffer #(
+  hsv_core_skid_buffer #(
       .WIDTH($bits(commit_data))
   ) foo2commit (
       .clk_core,

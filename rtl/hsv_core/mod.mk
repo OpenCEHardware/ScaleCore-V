@@ -1,5 +1,5 @@
 cores := hsv_core_top_flat hsv_core_pkg hsv_core_regfile
-subdirs := fetch decode issue alu foo mem branch ctrlstatus commit
+subdirs := fetch decode issue alu foo mem branch ctrlstatus commit utils
 
 define core
   $(this)/deps := \
@@ -20,7 +20,7 @@ define core
 endef
 
 define core/hsv_core_pkg
-  $(this)/deps := if_common hs_utils
+  $(this)/deps := if_common hsv_core_utils
 
   $(this)/rtl_files := hsv_core_pkg.sv
 endef

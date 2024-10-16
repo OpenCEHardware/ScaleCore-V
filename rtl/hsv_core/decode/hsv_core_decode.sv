@@ -91,7 +91,7 @@ module hsv_core_decode
       .common
   );
 
-  hs_skid_buffer #(
+  hsv_core_skid_buffer #(
       .WIDTH($bits(issue_data_t))
   ) decode2issue (
       .clk_core,

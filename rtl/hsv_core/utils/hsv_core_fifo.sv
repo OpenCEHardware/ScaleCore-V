@@ -1,4 +1,4 @@
-module hs_fifo #(
+module hsv_core_fifo #(
     int WIDTH = 1,
     int DEPTH = 1
 ) (

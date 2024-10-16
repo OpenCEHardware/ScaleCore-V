@@ -63,7 +63,7 @@ module hsv_core_branch
   );
 
   // Buffering pipe
-  hs_skid_buffer #(
+  hsv_core_skid_buffer #(
       .WIDTH($bits(commit_data))
   ) branch_2_commit (
       .clk_core,

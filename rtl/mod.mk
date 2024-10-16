@@ -1,1 +1,1 @@
-subdirs := hsv_core hs_utils
+subdirs := hsv_core

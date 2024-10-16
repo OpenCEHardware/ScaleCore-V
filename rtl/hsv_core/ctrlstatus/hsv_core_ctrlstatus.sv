@@ -194,7 +194,7 @@ module hsv_core_ctrlstatus
       .current_mode
   );
 
-  hs_skid_buffer #(
+  hsv_core_skid_buffer #(
       .WIDTH($bits(commit_data))
   ) ctrlstatus2commit (
       .clk_core,

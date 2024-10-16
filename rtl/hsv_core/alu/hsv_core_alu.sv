@@ -77,7 +77,7 @@ module hsv_core_alu
   );
 
   // Buffering pipe
-  hs_skid_buffer #(
+  hsv_core_skid_buffer #(
       .WIDTH($bits(commit_data))
   ) alu_2_commit (
       .clk_core,

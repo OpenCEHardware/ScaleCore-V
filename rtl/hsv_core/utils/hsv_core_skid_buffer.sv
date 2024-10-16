@@ -1,4 +1,4 @@
-module hs_skid_buffer #(
+module hsv_core_skid_buffer #(
     int WIDTH = 1
 ) (
     input logic clk_core,

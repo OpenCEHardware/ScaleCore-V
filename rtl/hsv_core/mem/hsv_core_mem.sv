@@ -119,7 +119,7 @@ module hsv_core_mem
       .response_valid_o(response_fifo_in_valid)
   );
 
-  hs_fifo #(
+  hsv_core_fifo #(
       .WIDTH($bits(read_write_t)),
       .DEPTH(FIFO_DEPTH)
   ) request_fifo (
@@ -173,7 +173,7 @@ module hsv_core_mem
       .commit_token
   );
 
-  hs_fifo #(
+  hsv_core_fifo #(
       .WIDTH($bits(read_write_t)),
       .DEPTH(FIFO_DEPTH)
   ) response_fifo (
@@ -226,7 +226,7 @@ module hsv_core_mem
       .out(out_response)
   );
 
-  hs_skid_buffer #(
+  hsv_core_skid_buffer #(
       .WIDTH($bits(commit_data))
   ) mem_2_commit (
       .clk_core,
