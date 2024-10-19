@@ -103,7 +103,7 @@ module hsv_core_mem
   assign commit_stall = ~out_ready;
 
   // A requested flush can proceed once all pending reads and writes have completed
-  logic flush, can_flush;
+  logic can_flush;
   assign can_flush = (pending_reads == '0) & (pending_writes == '0) & (write_balance == '0);
 
   assign ready_o = ~request_fifo_in_stall & ~response_fifo_in_stall;
@@ -121,7 +121,7 @@ module hsv_core_mem
   hsv_core_mem_address address_stage (
       .clk_core,
 
-      .flush,
+      .flush(flush_ack),
       .request_stall (request_fifo_in_stall),
       .response_stall(response_fifo_in_stall),
 
@@ -140,7 +140,7 @@ module hsv_core_mem
       .clk_core,
       .rst_core_n,
 
-      .flush,
+      .flush(flush_ack),
 
       .in(transaction),
       .ready_o(request_fifo_in_ready),
@@ -155,7 +155,7 @@ module hsv_core_mem
       .clk_core,
       .rst_core_n,
 
-      .flush,
+      .flush(flush_ack),
       .flush_req,
       .dmem_w_stall,
       .dmem_ar_stall,
@@ -194,7 +194,7 @@ module hsv_core_mem
       .clk_core,
       .rst_core_n,
 
-      .flush,
+      .flush(flush_ack),
 
       .in(transaction),
       .ready_o(response_fifo_in_ready),
@@ -209,7 +209,7 @@ module hsv_core_mem
       .clk_core,
       .rst_core_n,
 
-      .flush,
+      .flush(flush_ack),
       .commit_stall,
       .response_stall(response_fifo_out_stall),
 
@@ -263,7 +263,7 @@ module hsv_core_mem
 
       .up  (pending_reads_up),
       .down(pending_reads_down),
-      .flush,
+      .flush(flush_ack),
 
       .value(pending_reads)
   );
@@ -274,7 +274,7 @@ module hsv_core_mem
 
       .up  (pending_writes_up),
       .down(pending_writes_down),
-      .flush,
+      .flush(flush_ack),
 
       .value(pending_writes)
   );
@@ -285,18 +285,16 @@ module hsv_core_mem
 
       .up  (write_balance_up),
       .down(write_balance_down),
-      .flush,
+      .flush(flush_ack),
 
       .value(write_balance)
   );
 
   always_ff @(posedge clk_core or negedge rst_core_n)
     if (~rst_core_n) begin
-      flush <= 1;
       flush_ack <= 1;
     end else begin
-      flush <= flush_req & can_flush;
-      flush_ack <= flush;
+      flush_ack <= flush_req & can_flush;
     end
 
 endmodule

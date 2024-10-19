@@ -6,6 +6,7 @@ module hsv_core_ctrlstatus_global_fsm
     input logic irq,
 
     output word  flush_target,
+    output logic flush_halt,
     output logic flush_req,
     input  logic flush_ack,
 
@@ -43,7 +44,7 @@ module hsv_core_ctrlstatus_global_fsm
 
   logic interrupt_enable, irq_pending, is_trap, mode_switch, take_irq, wait_for_irq;
 
-  word jump_address;
+  word jump_address, last_jump_address;
   logic jump;
   logic [$bits(mcause_o.CODE.next) - 1:0] trap_code;
 
@@ -52,6 +53,7 @@ module hsv_core_ctrlstatus_global_fsm
   localparam int McausePadBits = $bits(mcause_o.CODE.next) - $bits(ctrl_trap_cause);
 
   assign is_trap = ctrl_trap | take_irq;
+  assign flush_target = jump ? jump_address : last_jump_address;
 
   assign mip_o.MEIP.next = irq;
 
@@ -79,6 +81,7 @@ module hsv_core_ctrlstatus_global_fsm
 
     jump = 0;
     flush_req = 0;
+    flush_halt = 0;
     ctrl_begin_irq = 0;
 
     to_mode = MACHINE_MODE;
@@ -91,6 +94,7 @@ module hsv_core_ctrlstatus_global_fsm
       SETTLE: begin
         jump       = 1;
         flush_req  = 1;
+        flush_halt = ctrl_wait_irq;
         next_state = ctrl_wait_irq ? WAIT_FOR_IRQ : FLUSH_ENTER;
 
         if (is_trap) mode_switch = 1;
@@ -122,6 +126,7 @@ module hsv_core_ctrlstatus_global_fsm
 
       WAIT_FOR_IRQ: begin
         flush_req = 1;
+        flush_halt = 1;
         wait_for_irq = 1;
 
         if (irq) next_state = SETTLE;
@@ -167,7 +172,7 @@ module hsv_core_ctrlstatus_global_fsm
     // selected higher-privilege-mode interrupts before ceding control to a lower-privilege mode."
     irq_pending <= regs_i.MIP.MEIP.value & regs_i.MIE.MEIE.value & interrupt_enable;
 
-    if (jump) flush_target <= jump_address;
+    if (jump) last_jump_address <= jump_address;
   end
 
   always_ff @(posedge clk_core or negedge rst_core_n)

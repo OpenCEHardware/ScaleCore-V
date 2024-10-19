@@ -14,7 +14,7 @@ module hsv_core_top
 );
 
   word  flush_target;
-  logic flush_req;
+  logic flush_halt, flush_req;
   logic flush_ack_fetch, flush_ack_decode, flush_ack_issue, flush_ack_commit;
   logic flush_ack_alu, flush_ack_foo, flush_ack_mem, flush_ack_branch;
 
@@ -68,6 +68,7 @@ module hsv_core_top
       .rst_core_n,
 
       .flush_target,
+      .flush_halt,
       .flush_req,
       .flush_ack(flush_ack_fetch),
 
@@ -212,6 +213,7 @@ module hsv_core_top
       .irq(irq_core),
 
       .flush_target,
+      .flush_halt,
       .flush_req,
       .flush_ack_fetch,
       .flush_ack_decode,

@@ -8,6 +8,7 @@ module hsv_core_ctrlstatus
     input logic irq,
 
     output word  flush_target,
+    output logic flush_halt,
     output logic flush_req,
     input  logic flush_ack_fetch,
     input  logic flush_ack_decode,
@@ -99,6 +100,7 @@ module hsv_core_ctrlstatus
       .irq,
 
       .flush_target,
+      .flush_halt,
       .flush_req,
       .flush_ack,
 
