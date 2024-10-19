@@ -34,7 +34,7 @@ module hsv_core_ctrlstatus
     input  logic       ctrl_mode_return,
     input  word        ctrl_next_pc,
     input  logic       ctrl_commit,
-    output logic       ctrl_wait_irq,
+    input  logic       ctrl_wait_irq,
     output logic       ctrl_begin_irq,
 
     output privilege_t current_mode
