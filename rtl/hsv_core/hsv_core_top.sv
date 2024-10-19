@@ -1,8 +1,10 @@
 module hsv_core_top
   import hsv_core_pkg::*;
 #(
-    parameter word HART_ID         = 0,
-    parameter int  FETCH_BURST_LEN = 4
+    parameter word HART_ID                = 0,
+    parameter int  FETCH_BURST_LEN        = 4,
+    parameter int  MEM_IO_FIFO_DEPTH      = 8,
+    parameter int  MEM_PENDING_FIFO_DEPTH = 8
 ) (
     input logic clk_core,
     input logic rst_core_n,
@@ -168,7 +170,10 @@ module hsv_core_top
       .valid_o(foo_commit_valid)
   );
 
-  hsv_core_mem mem (
+  hsv_core_mem #(
+      .IO_FIFO_DEPTH(MEM_IO_FIFO_DEPTH),
+      .PENDING_FIFO_DEPTH(MEM_PENDING_FIFO_DEPTH)
+  ) mem (
       .clk_core,
       .rst_core_n,
 

@@ -1,6 +1,8 @@
 module hsv_core_top_flat #(
-    parameter logic [31:0] HART_ID         = 0,
-    parameter int          FETCH_BURST_LEN = 4
+    parameter logic [31:0] HART_ID                = 0,
+    parameter int          FETCH_BURST_LEN        = 4,
+    parameter int          MEM_IO_FIFO_DEPTH      = 8,
+    parameter int          MEM_PENDING_FIFO_DEPTH = 8
 ) (
     input logic clk_core,
     input logic rst_core_n,

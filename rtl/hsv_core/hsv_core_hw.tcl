@@ -62,6 +62,24 @@ set_parameter_property FETCH_BURST_LEN UNITS None
 set_parameter_property FETCH_BURST_LEN ALLOWED_RANGES 1:16
 set_parameter_property FETCH_BURST_LEN DESCRIPTION ""
 set_parameter_property FETCH_BURST_LEN AFFECTS_GENERATION false
+add_parameter MEM_IO_FIFO_DEPTH INTEGER 8 ""
+set_parameter_property MEM_IO_FIFO_DEPTH DEFAULT_VALUE 8
+set_parameter_property MEM_IO_FIFO_DEPTH DISPLAY_NAME "Depth of request/response FIFOs in memory unit"
+set_parameter_property MEM_IO_FIFO_DEPTH WIDTH ""
+set_parameter_property MEM_IO_FIFO_DEPTH TYPE INTEGER
+set_parameter_property MEM_IO_FIFO_DEPTH UNITS None
+set_parameter_property MEM_IO_FIFO_DEPTH ALLOWED_RANGES 2:32
+set_parameter_property MEM_IO_FIFO_DEPTH DESCRIPTION ""
+set_parameter_property MEM_IO_FIFO_DEPTH AFFECTS_GENERATION false
+add_parameter MEM_PENDING_FIFO_DEPTH INTEGER 8 ""
+set_parameter_property MEM_PENDING_FIFO_DEPTH DEFAULT_VALUE 8
+set_parameter_property MEM_PENDING_FIFO_DEPTH DISPLAY_NAME "Depth of pending reads/writes FIFOs in memory unit"
+set_parameter_property MEM_PENDING_FIFO_DEPTH WIDTH ""
+set_parameter_property MEM_PENDING_FIFO_DEPTH TYPE INTEGER
+set_parameter_property MEM_PENDING_FIFO_DEPTH UNITS None
+set_parameter_property MEM_PENDING_FIFO_DEPTH ALLOWED_RANGES 2:32
+set_parameter_property MEM_PENDING_FIFO_DEPTH DESCRIPTION ""
+set_parameter_property MEM_PENDING_FIFO_DEPTH AFFECTS_GENERATION false
 
 
 # 
@@ -168,8 +186,8 @@ add_interface_port imem imem_awprot awprot Output 3
 add_interface dmem axi4 start
 set_interface_property dmem associatedClock clk
 set_interface_property dmem associatedReset rst
-set_interface_property dmem readIssuingCapability 16
-set_interface_property dmem writeIssuingCapability 16
+set_interface_property dmem readIssuingCapability 8
+set_interface_property dmem writeIssuingCapability 8
 set_interface_property dmem combinedIssuingCapability 16
 set_interface_property dmem ENABLED true
 set_interface_property dmem EXPORT_OF ""

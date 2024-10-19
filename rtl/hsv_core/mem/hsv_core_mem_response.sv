@@ -19,6 +19,7 @@ module hsv_core_mem_response
 
     input mem_counter pending_reads,
     input mem_counter pending_writes,
+    input word        pending_write_completed_address,
 
     input  logic      dmem_r_valid,
     input  word       dmem_r_data,
@@ -36,8 +37,11 @@ module hsv_core_mem_response
 );
 
   word extend_mask, read_data;
-  logic completed, error, is_read, is_write, misaligned, sign_bit;
+  logic completed, is_read, is_write, sign_bit;
   logic [1:0] read_shift;
+
+  word delayed_write_error_address, exception_address;
+  logic delayed_write_error, dmem_b_error, dmem_r_error, io_error, imprecise_write_error, misaligned;
   exception_t exception_cause;
   commit_action_t action;
 
@@ -62,6 +66,10 @@ module hsv_core_mem_response
   assign response_stall = commit_stall | ~completed;
 
   assign read_shift = response.address[$bits(read_shift)-1:0];
+
+  assign dmem_b_error = is_axi_error(dmem_b_resp);
+  assign dmem_r_error = is_axi_error(dmem_r_resp);
+  assign imprecise_write_error = pending_writes_down & dmem_b_error & address_is_memory(pending_write_completed_address);
 
   hsv_core_mem_counter writes_to_commit_counter (
       .clk_core,
@@ -89,6 +97,8 @@ module hsv_core_mem_response
     dmem_r_ready = is_read;
     dmem_b_ready = is_write;
 
+    exception_address = response.address;
+
     // The request module never executes misaligned address operations,
     // they are pushed on until they reach here and an exception is committed
     if (~valid_i | commit_stall | misaligned) begin
@@ -101,22 +111,30 @@ module hsv_core_mem_response
 
     if (is_read) begin
       // Commit reads as soon as the read response is available
-      error = is_axi_error(dmem_r_resp);
+      io_error = dmem_r_error;
       completed = dmem_r_valid;
     end else if (response.is_memory) begin
-      // Commit memory writes as soon as possible
-      // FIXME: Memory write errors are silently ignored!
-      error = 0;
+      // Commit memory writes as soon as possible. Note that I/O errors from
+      // ordinary memory writes trigger so-called "imprecise exceptions". That
+      // is, the exception will be taken on by some future "victim"
+      // instruction that happens to also be an ordinary memory write. The
+      // mtval CSR will always hold the correct faulting address. This is an
+      // unfortunate consequence of our current memory unit architecture and
+      // guaranteeing precise store access exceptions would likely require
+      // some kind of out-of-order approach. This behavior is visible to
+      // M-mode software.
+      io_error = delayed_write_error;
       completed = 1;
+      exception_address = delayed_write_error_address;
     end else begin
       // Commit I/O writes as soon as the write response is available
-      error = is_axi_error(dmem_b_resp);
+      io_error = dmem_b_error;
       completed = dmem_b_valid & (discard_responses == '0);
     end
 
     fence_ready = 0;
     if (response.mem_data.fence) begin
-      error = 0;
+      io_error = 0;
       completed = fence_valid & (pending_reads == '0) & (pending_writes == '0);
       fence_ready = completed & ~commit_stall;
     end
@@ -159,7 +177,7 @@ module hsv_core_mem_response
     if (is_read) exception_cause = misaligned ? EXC_LOAD_ADDRESS_MISALIGNED : EXC_LOAD_ACCESS_FAULT;
     else exception_cause = misaligned ? EXC_STORE_ADDRESS_MISALIGNED : EXC_STORE_ACCESS_FAULT;
 
-    if (error | misaligned) action = COMMIT_EXCEPTION;
+    if (io_error | misaligned) action = COMMIT_EXCEPTION;
     else action = COMMIT_NEXT;
 
     if (response.mem_data.fence) action = COMMIT_NEXT;
@@ -175,10 +193,18 @@ module hsv_core_mem_response
       out.next_pc <= response.mem_data.common.pc_increment;
       out.writeback <= is_read;
       out.exception_cause <= exception_cause;
-      out.exception_value <= response.address;
+      out.exception_value <= exception_address;
     end
 
-    if (flush) valid_o <= 0;
+    if (~delayed_write_error & imprecise_write_error) begin
+      delayed_write_error <= 1;
+      delayed_write_error_address <= pending_write_completed_address;
+    end
+
+    if (flush) begin
+      valid_o <= 0;
+      delayed_write_error <= 0;
+    end
   end
 
 endmodule

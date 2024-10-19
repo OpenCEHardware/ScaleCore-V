@@ -1,14 +1,19 @@
 module hsv_core_mem_request
   import hsv_core_pkg::*;
-(
+#(
+    int PENDING_FIFO_DEPTH = 8
+) (
     input logic clk_core,
     input logic rst_core_n,
 
-    input  logic flush,
-    input  logic flush_req,
+    input logic flush,
+    input logic flush_req,
+
     input  logic dmem_w_stall,
     input  logic dmem_ar_stall,
     input  logic dmem_aw_stall,
+    input  logic pending_reads_stall,
+    input  logic pending_writes_stall,
     output logic request_stall,
 
     input read_write_t request,
@@ -18,8 +23,10 @@ module hsv_core_mem_request
     output logic       fence_valid,
     input  mem_counter pending_reads,
     output logic       pending_reads_up,
+    output word        pending_read_address,
     input  mem_counter pending_writes,
     output logic       pending_writes_up,
+    output word        pending_write_address,
     input  mem_counter write_balance,
     output logic       write_balance_down,
 
@@ -33,7 +40,12 @@ module hsv_core_mem_request
     output logic dmem_aw_valid,
     output word  dmem_aw_address,
 
-    input insn_token commit_token
+    input insn_token commit_token,
+
+    input word                             pending_reads_peek[PENDING_FIFO_DEPTH],
+    input logic [PENDING_FIFO_DEPTH - 1:0] pending_reads_peek_valid,
+    input word                             pending_writes_peek[PENDING_FIFO_DEPTH],
+    input logic [PENDING_FIFO_DEPTH - 1:0] pending_writes_peek_valid
 );
 
   localparam int AddrSubwordBits = $clog2($bits(word) / 8);
@@ -56,7 +68,18 @@ module hsv_core_mem_request
   assign fence_valid = valid_i & request.mem_data.fence;
   assign commit_waits_for_me = request.mem_data.common.token == commit_token;
 
+  assign pending_read_address = word_address;
+  assign pending_write_address = word_address;
+
   always_comb begin
+    // Discard address bits [1:0] (AXI forbids non-aligned accesses)
+    word_address = request.address;
+    word_address[AddrSubwordBits-1:0] = '0;
+
+    ///////////////////////////
+    // Read request hazards //
+    //////////////////////////
+
     // RAM/ROM memory reads can execute even before commit expects them,
     // because they have no side effects and cvn be safely discarded later on
     // if necessary. This is unlike I/O reads and all writes, as they can
@@ -68,12 +91,21 @@ module hsv_core_mem_request
     if (commit_waits_for_me) read_stall = 0;
 
     // Read requests go through dmem.AR, so this channel needs be ready
-    if (dmem_ar_stall) read_stall = 1;
+    if (dmem_ar_stall | pending_reads_stall) read_stall = 1;
 
-    // Reads cannot proceed unless all previous writes have completed
-    if (pending_writes != '0) read_stall = 1;
+    // Reads must wait for any pending writes to the same address to complete.
+    // Otherwise, the behavior is unspecified (memory ordering hazard).
+    for (int i = 0; i < PENDING_FIFO_DEPTH; ++i) begin
+      if (pending_writes_peek_valid[i] & (pending_writes_peek[i] == word_address)) begin
+        read_stall = 1;
+      end
+    end
 
-    // Note: this is a signed comparison (counter may be negative)
+    ///////////////////////////
+    // Write request hazards //
+    ///////////////////////////
+
+    // Note: this is a signed comparison, 'write_balance' might be negative
     write_stall = write_balance <= mem_counter'(0);
 
     // write_balance is meaningful for ordinary memory writes only
@@ -83,10 +115,20 @@ module hsv_core_mem_request
 
     // Write requests go through both dmem.AW and dmem.W, and so the two channels
     // have to be ready for a write to execute
-    if (dmem_aw_stall | dmem_w_stall) write_stall = 1;
+    if (dmem_aw_stall | dmem_w_stall | pending_writes_stall) write_stall = 1;
 
-    // Writes cannot proceed unless all previous reads have completed
-    if (pending_reads != '0) write_stall = 1;
+    // Writes must wait for any pending reads to the same address to complete.
+    // Otherwise, the behavior is unspecified (memory ordering hazard).
+    for (int i = 0; i < PENDING_FIFO_DEPTH; ++i) begin
+      if (pending_reads_peek_valid[i] & (pending_reads_peek[i] == word_address)) begin
+        write_stall = 1;
+      end
+    end
+
+
+    ////////////////////////////////////////
+    // Common read/write abort conditions //
+    ///////////////////////////////////////
 
     // Illegal reads/writes go through the request FIFO as well, but they are
     // discarded and are never sent through dmem
@@ -108,10 +150,6 @@ module hsv_core_mem_request
 
     // After flush req, permit only as many writes as needed to match the commit count
     if (flush_req & (write_balance <= 0)) write_stall = 1;
-
-    // Discard address bits [1:0], AXI transactions must be word-aligned
-    word_address = request.address;
-    word_address[AddrSubwordBits-1:0] = '0;
   end
 
   always_ff @(posedge clk_core or negedge rst_core_n)
@@ -128,9 +166,9 @@ module hsv_core_mem_request
     end
 
   always_ff @(posedge clk_core) begin
-    if (~dmem_ar_stall) dmem_ar_address <= word_address;
+    if (~dmem_ar_stall) dmem_ar_address <= pending_read_address;
 
-    if (~dmem_aw_stall) dmem_aw_address <= word_address;
+    if (~dmem_aw_stall) dmem_aw_address <= pending_write_address;
 
     if (~dmem_w_stall) begin
       dmem_w_data   <= request.write_data;

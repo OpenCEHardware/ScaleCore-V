@@ -1,7 +1,8 @@
 module hsv_core_mem
   import hsv_core_pkg::*;
 #(
-    int FIFO_DEPTH = 8
+    int IO_FIFO_DEPTH      = 8,
+    int PENDING_FIFO_DEPTH = 8
 ) (
     input logic clk_core,
     input logic rst_core_n,
@@ -25,6 +26,11 @@ module hsv_core_mem
 
   logic dmem_ar_stall, dmem_aw_stall, dmem_w_stall;
   read_write_t transaction, request_fifo_out, response_fifo_out;
+
+  word pending_read_address, pending_write_address, pending_write_completed_address;
+  word pending_reads_peek[PENDING_FIFO_DEPTH], pending_writes_peek[PENDING_FIFO_DEPTH];
+  logic pending_reads_ready, pending_reads_stall, pending_writes_ready, pending_writes_stall;
+  logic [PENDING_FIFO_DEPTH - 1:0] pending_reads_peek_valid, pending_writes_peek_valid;
 
   logic request_fifo_in_ready, request_fifo_in_valid, request_fifo_in_stall;
   logic request_fifo_out_ready, request_fifo_out_valid, request_fifo_out_stall;
@@ -118,6 +124,9 @@ module hsv_core_mem
   assign dmem_ar_stall = ~dmem.arready & dmem.arvalid;
   assign dmem_aw_stall = ~dmem.awready & dmem.awvalid;
 
+  assign pending_reads_stall = ~pending_reads_ready;
+  assign pending_writes_stall = ~pending_writes_ready;
+
   hsv_core_mem_address address_stage (
       .clk_core,
 
@@ -135,7 +144,7 @@ module hsv_core_mem
 
   hsv_core_fifo #(
       .WIDTH($bits(read_write_t)),
-      .DEPTH(FIFO_DEPTH)
+      .DEPTH(IO_FIFO_DEPTH)
   ) request_fifo (
       .clk_core,
       .rst_core_n,
@@ -151,7 +160,9 @@ module hsv_core_mem
       .valid_o(request_fifo_out_valid)
   );
 
-  hsv_core_mem_request request_stage (
+  hsv_core_mem_request #(
+      .PENDING_FIFO_DEPTH(PENDING_FIFO_DEPTH)
+  ) request_stage (
       .clk_core,
       .rst_core_n,
 
@@ -161,6 +172,8 @@ module hsv_core_mem
       .dmem_ar_stall,
       .dmem_aw_stall,
       .request_stall(request_fifo_out_stall),
+      .pending_reads_stall,
+      .pending_writes_stall,
 
       .request(request_fifo_out),
       .valid_i(request_fifo_out_valid),
@@ -169,8 +182,10 @@ module hsv_core_mem
       .fence_valid,
       .pending_reads,
       .pending_reads_up,
+      .pending_read_address,
       .pending_writes,
       .pending_writes_up,
+      .pending_write_address,
       .write_balance,
       .write_balance_down,
 
@@ -184,12 +199,17 @@ module hsv_core_mem
       .dmem_aw_valid  (dmem.awvalid),
       .dmem_aw_address(dmem.awaddr),
 
-      .commit_token
+      .commit_token,
+
+      .pending_reads_peek,
+      .pending_reads_peek_valid,
+      .pending_writes_peek,
+      .pending_writes_peek_valid
   );
 
   hsv_core_fifo #(
       .WIDTH($bits(read_write_t)),
-      .DEPTH(FIFO_DEPTH)
+      .DEPTH(IO_FIFO_DEPTH)
   ) response_fifo (
       .clk_core,
       .rst_core_n,
@@ -224,6 +244,7 @@ module hsv_core_mem
 
       .pending_reads,
       .pending_writes,
+      .pending_write_completed_address,
 
       .dmem_r_valid(dmem.rvalid),
       .dmem_r_data (dmem.rdata),
@@ -268,6 +289,27 @@ module hsv_core_mem
       .value(pending_reads)
   );
 
+  hsv_core_fifo_peek #(
+      .WIDTH($bits(word)),
+      .DEPTH(PENDING_FIFO_DEPTH)
+  ) pending_reads_fifo (
+      .clk_core,
+      .rst_core_n,
+
+      .flush(0),
+
+      .in(pending_read_address),
+      .ready_o(pending_reads_ready),
+      .valid_i(pending_reads_up),
+
+      .out(/* not connected */),
+      .ready_i(pending_reads_down),
+      .valid_o(/* not connected */),
+
+      .peek_valid(pending_reads_peek_valid),
+      .peek_window(pending_reads_peek)
+  );
+
   hsv_core_mem_counter pending_writes_counter (
       .clk_core,
       .rst_core_n,
@@ -277,6 +319,27 @@ module hsv_core_mem
       .flush(flush_ack),
 
       .value(pending_writes)
+  );
+
+  hsv_core_fifo_peek #(
+      .WIDTH($bits(word)),
+      .DEPTH(PENDING_FIFO_DEPTH)
+  ) pending_writes_fifo (
+      .clk_core,
+      .rst_core_n,
+
+      .flush(0),
+
+      .in(pending_write_address),
+      .ready_o(pending_writes_ready),
+      .valid_i(pending_writes_up),
+
+      .out(pending_write_completed_address),
+      .ready_i(pending_writes_down),
+      .valid_o(/* not connected */),
+
+      .peek_valid(pending_writes_peek_valid),
+      .peek_window(pending_writes_peek)
   );
 
   hsv_core_mem_counter write_balance_counter (
