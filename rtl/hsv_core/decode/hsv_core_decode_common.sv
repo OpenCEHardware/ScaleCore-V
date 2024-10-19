@@ -8,6 +8,7 @@ module hsv_core_decode_common
   common_data_t baseline;
 
   always_comb begin
+    baseline = 'x;
     baseline.pc = fetch_data.pc;
     baseline.pc_increment = fetch_data.pc_increment;
 

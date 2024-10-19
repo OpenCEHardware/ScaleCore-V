@@ -81,6 +81,7 @@ module hsv_core_issue_fork
     branch_data.common.rs2 = rs2_data;
     ctrlstatus_data.common.rs2 = rs2_data;
 
+    exec_mem_common = 'x;
     exec_mem_common.pc = issue_data.common.pc;
     exec_mem_common.token = token;
     exec_mem_common.rd_addr = issue_data.common.rd_addr;
