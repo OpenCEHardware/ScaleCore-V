@@ -1,6 +1,6 @@
-site_name: hSCALE-V Core Documentation
-repo_name: OpenCEHardware/SCALE-Core-V
-repo_url: https://github.com/OpenCEHardware/SCALE-Core-V
+site_name: ScaleCore-V Documentation
+repo_name: OpenCEHardware/ScaleCore-V
+repo_url: https://github.com/OpenCEHardware/ScaleCore-V
 extra_css:
   - css/extra.css 
 theme:
@@ -66,7 +66,7 @@ markdown_extensions:
         base_path: docs
 nav:
   - Home: index.md
-  - Block Name:
+  - ScaleCore-V:
     - Revisions: block/revisions.md
     - Document Conventions: block/conventions.md
     - Introduction: block/introduction.md
