@@ -1,1 +1,0 @@
-subdirs := alu issue
