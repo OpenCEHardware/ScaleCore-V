@@ -22,7 +22,8 @@ module tb_hsv_core_issue_hazardmask;
       .valid_i(valid_i),
       .mask(mask),
       .rd_mask(rd_mask),
-      .valid_o(valid_o)
+      .valid_o(valid_o),
+      .out()
   );
 
   // Clock generation
@@ -43,6 +44,7 @@ module tb_hsv_core_issue_hazardmask;
     stall = 0;
     flush_req = 0;
     valid_i = 0;
+    issue_data = '0;
     issue_data.common.rs1_addr = 0;
     issue_data.common.rs2_addr = 0;
     issue_data.common.rd_addr = 0;

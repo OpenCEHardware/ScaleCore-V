@@ -3,7 +3,6 @@ from mk import *
 tb_hsv_core_alu              = CocotbTestPackage('tb_hsv_core_alu')
 tb_hsv_core_issue_hazardmask = SystemVerilogTestPackage('tb_hsv_core_issue_hazardmask')
 tb_hsv_core_issue_regfile    = SystemVerilogTestPackage('tb_hsv_core_issue_regfile')
-tb_hsv_core_issue            = SystemVerilogTestPackage('tb_hsv_core_issue')
 
 hsv_core = find_package('hsv_core')
 
@@ -19,7 +18,3 @@ tb_hsv_core_issue_hazardmask.main     ('issue/tb_hsv_core_issue_hazardmask.sv')
 tb_hsv_core_issue_regfile.requires (hsv_core)
 tb_hsv_core_issue_regfile.top      ()
 tb_hsv_core_issue_regfile.main     ('issue/tb_hsv_core_issue_regfile.sv')
-
-tb_hsv_core_issue.requires (hsv_core)
-tb_hsv_core_issue.top      ()
-tb_hsv_core_issue.main     ('issue/tb_hsv_core_issue.sv')

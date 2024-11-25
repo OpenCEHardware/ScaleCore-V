@@ -13,9 +13,9 @@ module tb_hsv_core_issue_regfile;
   word     rd_data2;
 
   // Instantiate the DUT (Device Under Test)
-  hsv_core_issue_regfile dut (
+  hsv_core_regfile dut (
       .clk_core(clk_core),
-      .rst_n(rst_n),
+      .rst_core_n(rst_n),
       .rs1_addr(rd_addr1),
       .rs2_addr(rd_addr2),
       .wr_addr(wr_addr),
@@ -25,13 +25,13 @@ module tb_hsv_core_issue_regfile;
       .rs2_data(rd_data2)
   );
 
-  // Clock generation
-  always #5 clk_core = ~clk_core;
-
   // Waveform dump
   initial begin
     $dumpfile("tb_hsv_core_regfile.vcd");  // Specify the name of the dump file
     $dumpvars(0, tb_hsv_core_regfile);  // Dump all variables in the testbench
+
+    // Clock generation
+    forever #5 clk_core = ~clk_core;
   end
 
   // Test procedure
