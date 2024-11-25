@@ -83,8 +83,10 @@ module hsv_core_alu_opcode
         alu_data.compare = 1'b1;
         alu_data.negate = 1'b1;  // Negate for comparison
         alu_data.out_select = ALU_OUT_ADDER;  // Comparison uses the adder
-        alu_data.is_immediate = (opcode == OPCODE_SLTI || opcode == OPCODE_SLTIU); // Immediate for SLTI, SLTIU
-        alu_data.flip_signs = (opcode == OPCODE_SLT || opcode == OPCODE_SLTI); // Sign flip for SLT, SLTI
+        // Immediate for SLTI, SLTIU
+        alu_data.is_immediate = (opcode == OPCODE_SLTI || opcode == OPCODE_SLTIU);
+        // Sign flip for SLT, SLTI
+        alu_data.flip_signs = (opcode == OPCODE_SLT || opcode == OPCODE_SLTI);
       end
 
       OPCODE_LUI: begin

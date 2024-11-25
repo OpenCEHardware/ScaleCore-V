@@ -64,7 +64,7 @@ module hsv_core_fifo_peek #(
 
       if (~out_stall) begin
         valid_o <= can_read;
-		if (can_read) begin
+        if (can_read) begin
           read_ptr <= read_ptr_next;
           peek_valid[read_ptr] <= 0;
         end

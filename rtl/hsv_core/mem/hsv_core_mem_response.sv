@@ -41,9 +41,11 @@ module hsv_core_mem_response
   logic [1:0] read_shift;
 
   word delayed_write_error_address, exception_address;
-  logic delayed_write_error, dmem_b_error, dmem_r_error, io_error, imprecise_write_error, misaligned;
   exception_t exception_cause;
   commit_action_t action;
+
+  logic
+      delayed_write_error, dmem_b_error, dmem_r_error, io_error, imprecise_write_error, misaligned;
 
   logic writes_to_commit_up, writes_to_commit_down;
   logic discard_responses_up, discard_responses_down;
@@ -69,7 +71,10 @@ module hsv_core_mem_response
 
   assign dmem_b_error = is_axi_error(dmem_b_resp);
   assign dmem_r_error = is_axi_error(dmem_r_resp);
-  assign imprecise_write_error = pending_writes_down & dmem_b_error & address_is_memory(pending_write_completed_address);
+
+  assign imprecise_write_error = pending_writes_down & dmem_b_error & address_is_memory(
+      pending_write_completed_address
+  );
 
   hsv_core_mem_counter writes_to_commit_counter (
       .clk_core,
@@ -111,7 +116,7 @@ module hsv_core_mem_response
 
     if (is_read) begin
       // Commit reads as soon as the read response is available
-      io_error = dmem_r_error;
+      io_error  = dmem_r_error;
       completed = dmem_r_valid;
     end else if (response.is_memory) begin
       // Commit memory writes as soon as possible. Note that I/O errors from
@@ -128,7 +133,7 @@ module hsv_core_mem_response
       exception_address = delayed_write_error_address;
     end else begin
       // Commit I/O writes as soon as the write response is available
-      io_error = dmem_b_error;
+      io_error  = dmem_b_error;
       completed = dmem_b_valid & (discard_responses == '0);
     end
 
